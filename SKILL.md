@@ -14,6 +14,10 @@ Everything board-side is done by two scripts in this skill's `board/` folder.
 Your job is orchestration: get three inputs, check prerequisites, push, run, and
 translate errors. Do not improvise the packaging — the scripts are the product.
 
+**Paths:** `board/...` in the commands below refers to this skill's own directory
+(where this SKILL.md lives) — resolve it to an absolute path before running, since
+your working directory is the user's project.
+
 ## Inputs to collect from the user
 
 1. **Path to the export zip** (they exported with the "Linux arm64 (Uno Q)" preset
@@ -44,13 +48,17 @@ Detect: `adb shell test -f /home/arduino/.summer-jam-setup && echo done` — if
    adb push board/setup-board.sh /home/arduino/
    adb shell "sed -i 's/\r$//' /home/arduino/setup-board.sh"
    ```
-3. Run setup **interactively** (sudo will prompt; on a factory-fresh board it asks
-   the user to CREATE the board password — have the user type it, never ask them
-   to tell it to you):
+3. The setup script needs sudo, and sudo prompts for a password — **your shell has
+   no interactive stdin, so do NOT run this step yourself; it will hang.** Give the
+   user this command to run in their own terminal, and wait for them to confirm:
    ```
    adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
    ```
-4. Re-run until it prints `== setup complete ==`. It is idempotent.
+   On a factory-fresh board the sudo prompt asks them to CREATE the board password —
+   they type it themselves; never ask them to tell it to you.
+4. The script prints `== setup complete ==` when done; it is idempotent, so on any
+   doubt have the user re-run it. If it reported the autologin step as already
+   configured and the image as present, setup was already done — carry on.
 
 ## Deploy (every time)
 
