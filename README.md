@@ -152,42 +152,26 @@ has no headroom to spare.
 You don't export by hand — the `ship-to-unoq` skill does it for you (Step 6). This preset
 is what it looks for, which is why it goes in at scaffold time.
 
-### Step 5: Build inside the hardware budget
+### Step 5: Performance
 
-- **16.67 ms per physics tick.** `_physics_process` is a fixed 60 Hz, independent of render
-  framerate, and it fails as a **cliff, not a slope** — one tick over budget and Godot's
-  catch-up saturates and the game locks solid. `1000/fps` will not warn you; time each
-  phase *inside* the tick with `Time.get_ticks_usec()`.
-- **~15 µs per entity** for a per-entity GDScript loop, measured on a desktop. This board
-  is weaker. Designs that need a crowd need a deliberate budget, not optimism.
-- **Input through InputMap actions only** — `left`/`right`/`up`/`down` plus two to four
-  named actions. Never read a device directly; the handheld's buttons bind to those same
-  actions later.
-- **One mechanic.** A hackathon game that ends and invites another go beats a broad one
-  that never quite runs.
+2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty
+of headroom — something like 960×540 or 640×360 buys a lot back, and suits a nostalgic look
+anyway:
 
-Three things measured on this board, all counterintuitive enough to be worth stating:
+```ini
+[display]
 
-- **960×540 is the sweet spot, and resolution is your biggest lever.** Every 2D template
-  ran 37–72 FPS at 720p; at 540p they went back over 60 (one RPG template: 57 → 85 avg).
-  Set it up front:
-  ```ini
-  [display]
+window/size/viewport_width=960
+window/size/viewport_height=540
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+```
 
-  window/size/viewport_width=960
-  window/size/viewport_height=540
-  window/stretch/mode="canvas_items"
-  window/stretch/aspect="keep"
-  ```
-- **2D is not the cheap option here.** Blended 2D canvas costs roughly **4–4.7× more per
-  pixel than opaque 3D** on this GPU — no early-Z, so every stacked layer pays full fill.
-  A simple 3D scene held 128 FPS at 720p while the 2D templates sat at 37–72. If anyone
-  assumes 2D is the safe pick for weak hardware, correct them.
-- **Entity-heavy designs can't be fixed with resolution.** A survivors-like measured a
-  14.7 ms *resolution-independent* floor — that alone eats the entire 60 FPS budget, and
-  shrinking the viewport does nothing for it. The per-entity cost has to come down.
+Route input through InputMap actions — `left`/`right`/`up`/`down` plus two to four named
+ones — rather than reading a device directly, so the handheld's buttons bind to the same
+actions later.
 
-When frames drop, measure before optimising — `tune-performance`.
+If frames drop, measure before optimising — `tune-performance`.
 
 ### Step 6: Ship it to the board
 
