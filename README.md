@@ -167,9 +167,7 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 ```
 
-Route input through InputMap actions — `left`/`right`/`up`/`down` plus two to four named
-ones — rather than reading a device directly, so the handheld's buttons bind to the same
-actions later.
+Give the game keyboard controls — that's how the handheld's buttons arrive.
 
 If frames drop, measure before optimising — `tune-performance`.
 
