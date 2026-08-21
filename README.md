@@ -33,6 +33,12 @@ exists, so nothing has to be undone later.
 You are an AI coding agent. The user is at a hackathon building for the Arduino Uno Q.
 Detection first, then only do what's missing.
 
+**This repo has two documents and you will need both.** This README is the build
+playbook — install, project settings, export preset, performance. [`SKILL.md`](SKILL.md)
+is the deploy runbook: it exports the game and puts it on the board, and it is the only
+thing that should ever talk to the hardware. Steps 1–5 below are yours; Step 6 hands off
+to `SKILL.md`. Read it when you get there rather than improvising `adb` commands.
+
 ### Step 1: Install Summer Engine — and stop before scaffolding
 
 Follow the install playbook at
