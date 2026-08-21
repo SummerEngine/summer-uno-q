@@ -1,4 +1,2 @@
-# The runner image tarball (~106 MB) belongs in the summer-builds release, never in git —
-# it is over GitHub's 100 MB per-file limit, and image/ is where you naturally drop it
-# while working on the Dockerfile.
+# ~106 MB, lives in the summer-builds release
 image/*.tar.gz

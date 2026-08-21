@@ -1,4 +1,5 @@
 * text=auto
+
+# CRLF breaks bash on the board
 *.sh text eol=lf
 Dockerfile text eol=lf
-SKILL.md text eol=lf
