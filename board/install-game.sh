@@ -28,7 +28,11 @@ if [ -d "$APP" ] && [ ! -f "$APP/.summer-game" ] && [ "${FORCE:-0}" != "1" ]; th
     exit 1
 fi
 
-T=$(mktemp -d)
+# Stage on the SAME partition as $APPS. /home/arduino is its own mount (18G) while /
+# is a cramped 9.8G shared with docker images — staging in /tmp means unzipping ~100MB
+# onto the tight partition and then a cross-device copy that needs the space twice.
+# Same-partition staging makes the final mv an atomic rename instead.
+T=$(mktemp -d -p /home/arduino .summer-stage.XXXXXX)
 trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/app/game"
 unzip -oq "$ZIP" -d "$T/app/game"
@@ -41,7 +45,11 @@ head -c 4 "$BIN" | grep -q ELF || { echo "ERROR: $BIN is not an ELF executable �
 MACHINE=$(dd if="$BIN" bs=1 skip=18 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')
 [ "$MACHINE" = "b700" ] || {
     echo "ERROR: $BIN is not arm64 (e_machine=$MACHINE). Export with the 'Linux arm64 (Uno Q)' preset."; exit 1; }
-ls ./*.pck >/dev/null 2>&1 || { echo "ERROR: no .pck in zip — incomplete export?"; exit 1; }
+ls ./*.pck >/dev/null 2>&1 || {
+    echo "ERROR: no .pck next to the binary."
+    echo "  Most likely binary_format/embed_pck=true in the export preset — this pipeline"
+    echo "  needs the pck as a separate file. Set embed_pck=false and re-export."
+    exit 1; }
 chmod +x "$BIN"
 cd - >/dev/null
 
@@ -115,9 +123,9 @@ EOF
 
 # --- Install & start ---------------------------------------------------------
 arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
-rm -rf "$APP"
 mkdir -p "$APPS"
-mv "$T/app" "$APP"
+rm -rf "$APP"
+mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename
 
 echo ">> installed $APP — starting..."
 arduino-app-cli app start "user:$SLUG"
@@ -125,7 +133,8 @@ arduino-app-cli app start "user:$SLUG"
 sleep 6
 STATUS=$(arduino-app-cli app list 2>/dev/null | grep "user:$SLUG" | awk '{print $(NF-1)}' || true)
 if [ "$STATUS" = "running" ]; then
-    echo "OK: \"$NAME\" ($EMOJI) is running — manage it in App Lab under My Apps."
+    echo "OK: \"$NAME\" ($EMOJI) is installed and running."
+    echo "    Appears in App Lab as My Apps > $NAME once a display is attached to the board."
 else
     echo "FAILED: app status is '$STATUS'. Last logs:"
     arduino-app-cli app logs "user:$SLUG" --all 2>&1 | tail -20

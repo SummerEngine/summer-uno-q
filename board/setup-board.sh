@@ -8,8 +8,9 @@
 set -uo pipefail
 
 IMAGE=summer-game-runner:0.1.0
-MARKER=/home/arduino/.summer-jam-setup
+MARKER=/home/arduino/.summer-hackathon-setup
 TARBALL=${1:-}
+IMAGE_OK=1
 
 echo "== Summer Uno Q board setup =="
 
@@ -48,11 +49,17 @@ if docker image inspect "$IMAGE" >/dev/null 2>&1; then
     echo "3/4 runner image $IMAGE present"
 elif [ -n "$TARBALL" ] && [ -f "$TARBALL" ]; then
     echo "3/4 loading runner image from $TARBALL ..."
-    docker load < "$TARBALL"
+    if docker load < "$TARBALL" && docker image inspect "$IMAGE" >/dev/null 2>&1; then
+        echo "    loaded"
+    else
+        echo "    ERROR: docker load failed or did not produce $IMAGE (out of disk on / ?)"
+        IMAGE_OK=0
+    fi
 else
-    echo "3/4 WARNING: runner image $IMAGE missing and no tarball given."
+    echo "3/4 ERROR: runner image $IMAGE missing and no tarball given."
     echo "    Download it from the summer-builds release and re-run:"
     echo "    setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
+    IMAGE_OK=0
 fi
 
 # 4. Disk headroom.
@@ -66,5 +73,15 @@ if [ "$AVAIL_KB" -lt 512000 ]; then
     echo "    (they re-download automatically if an App Lab example needs them)"
 fi
 
+# Only claim completion if the board can actually run a game. Marking a half-set-up
+# board "done" is worse than failing: the deploy flow checks this marker, skips setup,
+# then fails on the missing image — and the fix it points at is the setup it just skipped.
+if [ "$IMAGE_OK" != "1" ]; then
+    echo "== setup INCOMPLETE — runner image not installed =="
+    echo "   Not marking this board as set up. Re-run with the tarball path:"
+    echo "   setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
+    exit 1
+fi
+
 touch "$MARKER"
-echo "== setup complete =="
+echo "== setup complete == ☀️"
