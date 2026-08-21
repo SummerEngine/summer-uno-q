@@ -1,7 +1,7 @@
-# Summer × Arduino Uno Q hackathon kit
+# Summer × Arduino Uno Q
 
 Everything an AI coding agent needs to build a game for the **Arduino Uno Q** with Summer
-Engine and get it running on the board. Theme: **Nostalgia**.
+Engine and get it running on the board.
 
 The Uno Q's Linux half (Qualcomm QRB2210, Adreno 702 mobile GPU) is what runs the game, so
 "export for Arduino" means **Linux arm64**. This repo carries the settings that make that
@@ -17,20 +17,20 @@ work, plus the skill that puts the finished game on the board as an Arduino App 
 
 Open your AI agent (Claude Code, Cursor, Codex, Copilot, …) and paste:
 
-> Install Summer Engine and let's make a game for the Arduino Uno Q hackathon. Read
+> Install Summer Engine and let's make a game for the Arduino Uno Q. Read
 > `github.com/SummerEngine/summer-uno-q`, check what I already have installed, install
 > whatever is missing, and log me in.
 
 The agent reads this README and installs what's missing. Then it asks what kind of game
-you're thinking about — theme is **Nostalgia** — suggests a template if one fits, and only
-creates the project once you've picked. Board-specific settings go in before any art
-exists, so nothing has to be undone later.
+you're thinking about, suggests a template if one fits, and only creates the project once
+you've picked. Board-specific settings go in before any art exists, so nothing has to be
+undone later.
 
 ---
 
-## AGENTS READING THIS: hackathon playbook
+## AGENTS READING THIS: playbook
 
-You are an AI coding agent. The user is at a hackathon building for the Arduino Uno Q.
+You are an AI coding agent. The user is building a game for the Arduino Uno Q.
 Detection first, then only do what's missing.
 
 **This repo has two documents and you will need both.** This README is the build
@@ -54,14 +54,14 @@ API is listening and MCP tools fail until it is) once Step 2 below has an answer
 ### Step 2: Ask what they're making, then create the project
 
 Ask before you scaffold. One question, plain language: *what kind of game are you thinking
-about?* Theme is **Nostalgia**, so expect answers like "a Game Boy-ish puzzler" or "an
-arcade high-score thing".
+about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", "an arcade
+high-score thing", "a little racer".
 
 Then match it against what already exists — `npx -y summer-engine@latest list templates`
 shows the set, and there are 16 community ones (2D platformer, RPG, grid puzzle, tower
 defence, survivors-like; 3D racing, FPS, third-person, voxel, city kit, …). If one fits
 their idea, **suggest it and say what they'd get**. A template is a running game on day
-one instead of an empty window, which at a hackathon is most of the battle.
+one instead of an empty window, which is most of the battle.
 
 Then wait for a yes. Their call, not yours — some people want the blank page, and starting
 from a template they didn't choose is worse than starting from `empty`.
@@ -161,8 +161,8 @@ is what it looks for, which is why it goes in at scaffold time.
 ### Step 5: Performance
 
 2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty
-of headroom — something like 960×540 or 640×360 buys a lot back, and suits a nostalgic look
-anyway:
+of headroom — something like 960×540 or 640×360 buys a lot back, and suits a chunky, retro
+look anyway:
 
 ```ini
 [display]
@@ -224,14 +224,13 @@ conflict.
 
 ---
 
-## The hackathon
-
-Theme: **Nostalgia**. Convenient pairing — fewer pixels and less motion is both what the
-era looked like and what this board wants, so the aesthetic and the frame budget pull in
-the same direction rather than fighting.
+## Design
 
 Run `brainstorm-game` before building. It writes the design to `.summer/GameSoul.md`, which
 every other Summer skill reads from.
+
+If the game is being made for an event with a theme, that comes from the person — take it
+from what they tell you, don't assume one.
 
 ---
 
