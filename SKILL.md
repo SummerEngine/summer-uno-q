@@ -167,10 +167,10 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    ```
    On a factory-fresh board the sudo prompt asks them to CREATE the board password —
    they type it themselves; never ask them to tell it to you.
-4. The script prints `== setup complete ==` when done; it is idempotent, so on any
+4. The script prints `Setup complete` when done; it is idempotent, so on any
    doubt have the user re-run it. If it reported the autologin step as already
    configured and the image as present, setup was already done — carry on.
-   If it prints `== setup INCOMPLETE ==` and exits 1, the runner image did not
+   If it prints `Setup incomplete` and exits 1, the runner image did not
    install. It deliberately does **not** mark the board as set up in that case, so
    fix what it names (usually the tarball path, or disk space on `/`) and re-run.
    Do not proceed to Deploy — the install will fail on the missing image.
@@ -213,7 +213,7 @@ sentences, not a report.
   > adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
   > ```
   >
-  > Wait for `== setup complete ==` and say go.
+  > Wait for `Setup complete` and say go.
 
   If you still need the name and emoji, ask for them in that same message. Everything
   else waits.

@@ -12,7 +12,7 @@ MARKER=/home/arduino/.summer-hackathon-setup
 TARBALL=${1:-}
 IMAGE_OK=1
 
-echo "== Summer Uno Q board setup =="
+echo "☀️ Summer Uno Q board setup"
 
 # 1. Screen locker + blanking off (user-level, no sudo). A locked/blanked session
 #    freezes every game on the board — this is mandatory, not cosmetic.
@@ -77,11 +77,11 @@ fi
 # board "done" is worse than failing: the deploy flow checks this marker, skips setup,
 # then fails on the missing image — and the fix it points at is the setup it just skipped.
 if [ "$IMAGE_OK" != "1" ]; then
-    echo "== setup INCOMPLETE — runner image not installed =="
+    echo "✗ Setup incomplete — runner image not installed"
     echo "   Not marking this board as set up. Re-run with the tarball path:"
     echo "   setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
     exit 1
 fi
 
 touch "$MARKER"
-echo "== setup complete == ☀️"
+echo "☀️ Setup complete — board is ready"
