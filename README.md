@@ -255,7 +255,6 @@ every other Summer skill reads from.
 | `board/setup-board.sh` | board | One-time fresh-board provisioning (idempotent) |
 | `board/install-game.sh` | board | Zip → App Lab app with `game_runner` brick → start |
 | `image/Dockerfile` | board | Runner image source (fallback: build on board with network) |
-| `hackathon-starter-prompt.md` | — | The paste-in prompt above, as a file |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
