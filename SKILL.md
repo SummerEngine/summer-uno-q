@@ -1,6 +1,6 @@
 ---
 name: ship-to-unoq
-description: Export a Summer Engine game for Linux arm64 and deploy it to an Arduino Uno Q handheld over USB. Use when the user wants to put their game on the Arduino/Uno Q/handheld, deploy to the board, or update a game already on it. Input is the path to their project; the skill exports it headlessly, provisions a fresh board on first use, installs the game as an Arduino App Lab app, and starts it.
+description: Export a Summer Engine game for Linux arm64 and deploy it to an Arduino Uno Q over USB. Use when the user wants to put their game on the Arduino/Uno Q/handheld, deploy to the board, or update a game already on it. Input is the path to their project; the skill exports it headlessly, provisions a fresh board on first use, installs the game as an Arduino App Lab app, and starts it.
 ---
 
 # Ship a Summer Engine game to the Arduino Uno Q
@@ -228,7 +228,7 @@ sentences, not a report.
   them, don't chase them, and don't paste them at the user — they never see the game log
   and quoting an `ERROR:` line at someone whose deploy just succeeded only worries them.
 - **On success: one happy line and the next physical step.** Something like "Your game's on
-  the board ☀️ — plug it into a monitor (HDMI/DSI) or pop it in the handheld and go play."
+  the board ☀️ — plug it into a monitor (HDMI/DSI) and go play."
   That's the whole message. No explanation of virtual displays, no `app logs` command, no
   App Lab click-through — when it worked, nobody wants the mechanics. Keep `app list` and
   `app logs` for when something actually failed.

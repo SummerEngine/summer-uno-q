@@ -160,9 +160,8 @@ is what it looks for, which is why it goes in at scaffold time.
 
 ### Step 5: Performance
 
-2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty
-of headroom — something like 960×540 or 640×360 buys a lot back, and suits a chunky, retro
-look anyway:
+2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty of
+headroom — something like 960×540 or 640×360 buys a lot back:
 
 ```ini
 [display]
@@ -173,7 +172,7 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 ```
 
-Give the game keyboard controls — that's how the handheld's buttons arrive.
+Give the game keyboard controls — buttons wired to the board arrive as keystrokes.
 
 If frames drop, measure before optimising — `tune-performance`.
 
@@ -204,8 +203,7 @@ conflict.
 - There is one sudo prompt the **user** types themselves, in their own terminal. On a
   factory-fresh board that prompt is *creating* the board password. Never ask them for it.
 - **Deploying is not the same as seeing it.** The game starts on the board whether or not
-  a screen is attached, so plug the board into a monitor (HDMI/DSI) — or into the
-  handheld — to actually play it.
+  a screen is attached, so plug the board into a monitor (HDMI/DSI) to actually play it.
 - **Nothing counts as working until it has been played on the board** — on a screen, with
   hands on the controls. `running` is not a playtest and neither is a clean type check.
 
