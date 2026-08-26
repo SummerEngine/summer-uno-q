@@ -178,18 +178,51 @@ If frames drop, measure before optimising — `tune-performance`.
 
 ### Step 6: Ship it to the board
 
-**Clone this repo** somewhere local and follow [`SKILL.md`](SKILL.md) as a runbook:
+**Clone this repo somewhere stable** — not a temp folder. `SKILL.md` drives
+`board/setup-board.sh` and `board/install-game.sh`, which have to exist on disk to be
+pushed to the board, so reading the markdown alone is not enough:
 
 ```bash
-git clone https://github.com/SummerEngine/summer-uno-q
+git clone https://github.com/SummerEngine/summer-uno-q ~/summer-uno-q
 ```
 
-The clone is required, not a convenience — `SKILL.md` drives `board/setup-board.sh` and
-`board/install-game.sh`, which have to exist on disk to be pushed to the board. Reading
-the markdown alone is not enough. Any agent can follow it. Claude Code users who want it
-to load as a skill next session should copy exactly two things into
-`~/.claude/skills/ship-to-unoq/` — `SKILL.md` and the `board/` folder. Not this README:
-two overlapping playbooks in one skill is worse than one that sends you back to the repo.
+**Then register it with the tool**, so it's still there in the next chat instead of
+something you re-explain every session. Do the one that matches:
+
+**Claude Code** — copy the skill directory:
+
+```bash
+mkdir -p ~/.claude/skills/ship-to-unoq
+cp -r ~/summer-uno-q/SKILL.md ~/summer-uno-q/board ~/.claude/skills/ship-to-unoq/
+```
+
+Copy those two things only. Not this README — two overlapping playbooks inside one skill
+is worse than one that sends you back to the repo.
+
+**Cursor** — write `.cursor/rules/ship-to-unoq.mdc` in the game project:
+
+```markdown
+---
+description: Deploy a Summer Engine game to an Arduino Uno Q over USB
+alwaysApply: false
+---
+
+To put the game on the board, follow ~/summer-uno-q/SKILL.md exactly, including the
+scripts in ~/summer-uno-q/board/. Do not improvise adb or docker commands.
+```
+
+**Codex** — add the same pointer to `AGENTS.md` in the game project, or to
+`~/.codex/AGENTS.md` to have it everywhere:
+
+```markdown
+## Deploying to the Arduino Uno Q
+
+Follow ~/summer-uno-q/SKILL.md exactly, including the scripts in ~/summer-uno-q/board/.
+Do not improvise adb or docker commands.
+```
+
+Use absolute paths in the pointer, not relative ones: the agent's working directory is the
+game project, not the clone.
 
 Then give the skill the **project path**, a game name, and an emoji. It exports the project
 headlessly for arm64, provisions the board on first use, and installs the game as an App
@@ -246,8 +279,9 @@ The prebuilt runner image (~105 MB) is a release asset:
 
 ## Notes
 
-- Works with any AI coding agent: Claude Code loads [`SKILL.md`](SKILL.md) as a skill; any
-  other agent — or a human — can follow the same file as a runbook.
+- Works with any AI coding agent. [`SKILL.md`](SKILL.md) loads as a skill in Claude Code
+  once copied into the skills directory (Step 6); everywhere else — and for a human — it
+  reads as a runbook.
 - Plug the Uno Q in with a USB-C **data** cable, straight to the computer, no hub. Allow
   about a minute after power-up before `adb devices` sees it.
 - Multiple games coexist on one board; re-deploying the same name updates in place.
