@@ -3,3 +3,5 @@
 # CRLF breaks bash on the board
 *.sh text eol=lf
 Dockerfile text eol=lf
+
+board/bridge/** -text
