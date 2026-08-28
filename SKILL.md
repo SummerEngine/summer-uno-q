@@ -153,12 +153,23 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
 
 1. Download the runner image (~105 MB) from
    `https://github.com/SummerEngine/summer-builds/releases/download/game-runner-0.1.0/summer-game-runner-0.1.0.tar.gz`
-2. Push it and the setup script:
+2. Push it, the Modulino bridge, and the setup script:
    ```
    adb push summer-game-runner-0.1.0.tar.gz /home/arduino/
+   adb shell "mkdir -p /home/arduino/.summer"
+   adb push board/bridge /home/arduino/.summer/bridge
+   adb push kit/python3-evdev.deb /home/arduino/python3-evdev.deb
+   adb push kit/arduino15-libs.tar.gz /home/arduino/arduino15-libs.tar.gz
    adb push board/setup-board.sh /home/arduino/
    adb shell "sed -i 's/\r$//' /home/arduino/setup-board.sh"
    ```
+   The bridge directory is **mandatory**: `setup-board.sh` installs the system-wide
+   HID injector service and refuses to run without it. (`SUMMER_NO_BRIDGE=1` is a
+   separate, deploy-time flag — see "Modulino input" below — that skips bundling
+   the bridge into one game's app; it does not change what setup needs.) The two
+   `kit/` files are optional accelerants: if either is missing, setup falls back to
+   `apt` and builds the bridge sketch online, so the board needs internet for that
+   one run.
 3. The setup script needs sudo, and sudo prompts for a password — **your shell has
    no interactive stdin, so do NOT run this step yourself; it will hang.** Give the
    user this command to run in their own terminal, and wait for them to confirm:
@@ -194,6 +205,29 @@ app logs — read them before retrying.
 **Push the exact zip you just exported — never glob for it.** A project that has been
 exported before can hold several arm64 zips in `build/` under different names; picking
 one with a wildcard silently ships a build from days ago that looks entirely correct.
+
+## Modulino input
+
+Every deployed game automatically includes Arduino's Modulino HID bridge. Physical
+controls arrive as ordinary keyboard events — bind these in the game:
+
+| Physical | Key |
+|---|---|
+| Joystick (d-pad mode) | Arrow keys |
+| Button A / B / C | A / S / ENTER |
+
+The map is the bridge's shipped default (`python/config.json`); players can remap it
+at `http://<board>:7000` while the game app runs, and remaps survive redeploys.
+No Modulinos attached = nothing happens, keyboard still works.
+
+Troubleshooting: `systemctl status summer-hid-injector` on the board;
+`POST http://localhost:7000/api/nudge` moves the mouse if the chain is alive.
+If a sketch build ever blocks a deploy, re-run install-game.sh with
+`SUMMER_NO_BRIDGE=1` for a sketch-less install.
+
+Note: the injector accepts UDP on 0.0.0.0:5555 (Arduino's design, unmodified) — on a
+shared network, anyone can inject input to the board. Acceptable for the jam; do not
+put boards on hostile networks.
 
 ## What to tell the user
 

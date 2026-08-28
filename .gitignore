@@ -1,2 +1,6 @@
 # ~106 MB, lives in the summer-builds release
 image/*.tar.gz
+
+# offline kit accelerants — see README's "Kit prep (maintainers)"
+kit/*.deb
+kit/*.tar.gz
