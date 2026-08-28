@@ -199,9 +199,10 @@ adb shell "sed -i 's/\r$//' /home/arduino/install-game.sh"
 adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"
 ```
 
-Success is a line starting `OK:`. Updating an existing
-game is the same command with the same name. On failure the installer prints the
-app logs — read them before retrying.
+Success is a line starting `OK:`. The first deploy of a game compiles and flashes
+the bridge sketch — expect **~5 minutes** with no output during the build; it is not
+hung. Updating an existing game is the same command with the same name and takes
+~30 seconds. On failure the installer prints the app logs — read them before retrying.
 
 **Push the exact zip you just exported — never glob for it.** A project that has been
 exported before can hold several arm64 zips in `build/` under different names; picking
