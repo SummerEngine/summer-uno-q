@@ -281,7 +281,8 @@ The prebuilt runner image (~105 MB) is a release asset:
 
 ## Kit prep (maintainers)
 
-Two offline artifacts ride with the kit (gitignored, in `kit/`):
+Two offline artifacts are committed in `kit/` so a fresh clone works on a board with
+no network. Regenerate them only when the pinned versions change:
 
 - `kit/python3-evdev.deb` — on any Debian trixie arm64 (the board works):
   `apt-get download python3-evdev`, then `adb pull` the deb and rename it to

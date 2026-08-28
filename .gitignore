@@ -1,6 +1,4 @@
 # ~106 MB, lives in the summer-builds release
 image/*.tar.gz
 
-# offline kit accelerants — see README's "Kit prep (maintainers)"
-kit/*.deb
-kit/*.tar.gz
+# kit/ binaries are committed on purpose: a fresh clone must be a complete offline kit
