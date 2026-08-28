@@ -167,9 +167,10 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    HID injector service and refuses to run without it. (`SUMMER_NO_BRIDGE=1` is a
    separate, deploy-time flag — see "Modulino input" below — that skips bundling
    the bridge into one game's app; it does not change what setup needs.) The two
-   `kit/` files are optional accelerants: if either is missing, setup falls back to
-   `apt` and builds the bridge sketch online, so the board needs internet for that
-   one run.
+   `kit/` files are optional accelerants: a missing `python3-evdev.deb` falls back to
+   `apt-get install` during setup (board online once); a missing
+   `arduino15-libs.tar.gz` just skips warming the library cache, so the board needs
+   to be online for the first game deploy's sketch build instead.
 3. The setup script needs sudo, and sudo prompts for a password — **your shell has
    no interactive stdin, so do NOT run this step yourself; it will hang.** Give the
    user this command to run in their own terminal, and wait for them to confirm:
