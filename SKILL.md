@@ -268,13 +268,18 @@ sentences, not a report.
   targets. `os_same_file_description ... DRM fds` is the same kind of noise. Recognise
   them, don't chase them, and don't paste them at the user — they never see the game log
   and quoting an `ERROR:` line at someone whose deploy just succeeded only worries them.
-- **On success: one happy line and the next physical step.** Something like "Your game's on
-  the board ☀️ — plug it into a monitor (HDMI/DSI) and go play."
-  That's the whole message. No explanation of virtual displays, no `app logs` command, no
-  App Lab click-through — when it worked, nobody wants the mechanics. Keep `app list` and
-  `app logs` for when something actually failed.
+- **On success: one happy line, then hand them the wheel.** Something like "Your game's
+  running on the board ☀️ — go play, and tell me what you want changed."
+  That's the whole message. No monitor/cable talk, no explanation of virtual displays,
+  no `app logs` command, no App Lab click-through — when it worked, nobody wants the
+  mechanics. Keep `app list` and `app logs` for when something actually failed.
 - Don't tell them to open App Lab, browse My Apps, or press Run to start it — the game is
-  already running, and none of that is reachable without a screen on the board anyway.
+  already running.
+- **If you drove the game yourself to verify it** (injected input, played it, crashed it),
+  don't hand the user your leftovers: restart it fresh before your final message —
+  `adb shell "arduino-app-cli app stop user:<slug>"`, then `app start user:<slug>` — so
+  they walk up to a title screen, not your test wreckage. If they asked for changes rather
+  than a play session, stop it and leave it stopped; say you'll start it when they want.
 - Then say how to redeploy after edits: same command, same name, updates in place.
 
 ## Tone
