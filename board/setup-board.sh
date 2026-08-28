@@ -92,9 +92,11 @@ if ! dpkg -s python3-evdev >/dev/null 2>&1; then
 fi
 python3 -c 'import evdev' || { echo "    ERROR: python3-evdev unusable"; exit 1; }
 
-# Sketch-library cache so the first game deploy builds offline.
-if [ -f /home/arduino/arduino15-libs.tar.gz ] && \
-   ! ls /home/arduino/.arduino15/internal/Arduino_Modulino_* >/dev/null 2>&1; then
+# Sketch-library cache so the first game deploy builds offline. Always extract:
+# it is 3 MB and idempotent, and any presence check here invites version drift —
+# factory boards ship Arduino_Modulino 0.7.0 while the sketch pins 0.8.0, so
+# "a Modulino lib exists" is not "the right one exists".
+if [ -f /home/arduino/arduino15-libs.tar.gz ]; then
     tar -xzf /home/arduino/arduino15-libs.tar.gz -C /home/arduino/ \
         || echo "    WARNING: lib cache extraction failed — first game deploy will need the board online"
 fi
