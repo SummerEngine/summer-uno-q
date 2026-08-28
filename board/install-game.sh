@@ -96,9 +96,9 @@ bricks:
 EOF
     # Bridge rides inside the game app (App Lab runs one app at a time, so it
     # cannot be its own app). Files are Arduino's, verbatim â€” see bridge/ATTRIBUTION.md.
-    cp -r "$BRIDGE/python" "$T/app/python"
-    cp -r "$BRIDGE/sketch" "$T/app/sketch"
-    cp -r "$BRIDGE/ui" "$T/app/ui"
+    cp -rp "$BRIDGE/python" "$T/app/python"
+    cp -rp "$BRIDGE/sketch" "$T/app/sketch"
+    cp -rp "$BRIDGE/ui" "$T/app/ui"
     # A team's saved key map survives redeploys: keep the old app's config.json.
     if [ -f "$APP/python/config.json" ]; then
         cp "$APP/python/config.json" "$T/app/python/config.json"
@@ -147,6 +147,13 @@ services:
       HOME: /tmp
     entrypoint: ["/bin/sh", "/game/run-game.sh"]
 EOF
+
+# Carry the old app's build cache (sketch artifacts + python venv) into the new
+# assembly — without it every redeploy recompiles the unchanged bridge sketch,
+# ~4.5 min instead of ~1. -p above keeps sketch mtimes stable for the same reason.
+if [ -d "$APP/.cache" ]; then
+    cp -a "$APP/.cache" "$T/app/.cache"
+fi
 
 # --- Install & start ---------------------------------------------------------
 arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
