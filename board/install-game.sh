@@ -146,6 +146,7 @@ services:
       XAUTHORITY: /tmp/.Xauthority
       XDG_RUNTIME_DIR: /run/user/1000
       HOME: /tmp
+      GAME_FLAGS: "--fullscreen"
     entrypoint: ["/bin/sh", "/game/run-game.sh"]
 EOF
 

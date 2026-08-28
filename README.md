@@ -172,7 +172,18 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 ```
 
-Give the game keyboard controls — buttons wired to the board arrive as keystrokes.
+**Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
+arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
+game over, level select: all of it must work with arrows + Enter/Space alone. A
+mouse-only "Play" button is a game nobody can start. In practice: `grab_focus()` the
+first button of every menu when it appears, set focus neighbors so arrows move between
+controls, and walk every screen start-to-finish with only the keyboard before calling
+it done.
+
+Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
+rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
+`window/stretch/mode="viewport"`: the game keeps rendering at 960x540 and scales up for
+almost nothing.
 
 If frames drop, measure before optimising — `tune-performance`.
 
