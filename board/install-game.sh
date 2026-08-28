@@ -6,6 +6,7 @@
 # Usage:  install-game.sh <export-zip> <game name> [icon-emoji]
 # Update: run again with the same name â€” replaces the game in place.
 # Env:    FORCE=1 to overwrite a folder that was not created by this installer.
+#         SUMMER_NO_BRIDGE=1 to assemble without the Modulino bridge.
 set -euo pipefail
 
 ZIP=${1:?usage: install-game.sh <export-zip> <game name> [icon-emoji]}
@@ -149,7 +150,7 @@ services:
 EOF
 
 # Carry the old app's build cache (sketch artifacts + python venv) into the new
-# assembly — without it every redeploy recompiles the unchanged bridge sketch,
+# assembly - without it every redeploy recompiles the unchanged bridge sketch,
 # ~4.5 min instead of ~1. -p above keeps sketch mtimes stable for the same reason.
 if [ -d "$APP/.cache" ]; then
     cp -a "$APP/.cache" "$T/app/.cache"

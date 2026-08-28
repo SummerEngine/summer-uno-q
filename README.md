@@ -271,8 +271,10 @@ from what they tell you, don't assume one.
 |---|---|---|
 | `SKILL.md` | agent | ship-to-unoq: inputs, prerequisites, commands, troubleshooting |
 | `board/setup-board.sh` | board | One-time fresh-board provisioning (idempotent) |
-| `board/install-game.sh` | board | Zip → App Lab app with `game_runner` brick → start |
+| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick, the `arduino:web_ui` brick, and the bridge files → start |
+| `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
+| `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
@@ -282,8 +284,9 @@ The prebuilt runner image (~105 MB) is a release asset:
 Two offline artifacts ride with the kit (gitignored, in `kit/`):
 
 - `kit/python3-evdev.deb` — on any Debian trixie arm64 (the board works):
-  `apt-get download python3-evdev`, then `adb pull` the deb. Verify with
-  `dpkg -I kit/python3-evdev.deb` that Depends lists only python3/libc
+  `apt-get download python3-evdev`, then `adb pull` the deb and rename it to
+  `kit/python3-evdev.deb` — the push flow and setup script expect that fixed name.
+  Verify with `dpkg -I kit/python3-evdev.deb` that Depends lists only python3/libc
   packages the board already has.
 - `kit/arduino15-libs.tar.gz` — from a board that has built the bridge sketch once:
   `tar -czf arduino15-libs.tar.gz -C /home/arduino .arduino15/internal` and pull.

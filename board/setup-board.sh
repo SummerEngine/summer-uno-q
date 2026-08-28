@@ -95,12 +95,14 @@ python3 -c 'import evdev' || { echo "    ERROR: python3-evdev unusable"; exit 1;
 # Sketch-library cache so the first game deploy builds offline.
 if [ -f /home/arduino/arduino15-libs.tar.gz ] && \
    ! ls /home/arduino/.arduino15/internal/Arduino_Modulino_* >/dev/null 2>&1; then
-    tar -xzf /home/arduino/arduino15-libs.tar.gz -C /home/arduino/
+    tar -xzf /home/arduino/arduino15-libs.tar.gz -C /home/arduino/ \
+        || echo "    WARNING: lib cache extraction failed — first game deploy will need the board online"
 fi
 
 sudo tee /etc/systemd/system/summer-hid-injector.service >/dev/null <<UNIT
 [Unit]
 Description=Summer HID injector (Modulino bridge -> uinput)
+StartLimitIntervalSec=0
 
 [Service]
 ExecStart=/usr/bin/python3 $BRIDGE/host/injector.py

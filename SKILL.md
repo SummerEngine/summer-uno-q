@@ -157,7 +157,7 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    ```
    adb push summer-game-runner-0.1.0.tar.gz /home/arduino/
    adb shell "mkdir -p /home/arduino/.summer"
-   adb push board/bridge /home/arduino/.summer/bridge
+   adb push board/bridge /home/arduino/.summer/
    adb push kit/python3-evdev.deb /home/arduino/python3-evdev.deb
    adb push kit/arduino15-libs.tar.gz /home/arduino/arduino15-libs.tar.gz
    adb push board/setup-board.sh /home/arduino/
@@ -218,14 +218,17 @@ controls arrive as ordinary keyboard events — bind these in the game:
 | Joystick (d-pad mode) | Arrow keys |
 | Button A / B / C | A / S / ENTER |
 
-The map is the bridge's shipped default (`python/config.json`); players can remap it
-at `http://<board>:7000` while the game app runs, and remaps survive redeploys.
+The three buttons (A/S/ENTER) are remappable at `http://<board>:7000` while the game
+app runs, and persist in `python/config.json`. The joystick's d-pad mode always sends
+arrow keys — that mapping is fixed, not remappable.
+Remaps survive normal redeploys; a `SUMMER_NO_BRIDGE=1` deploy discards them.
 No Modulinos attached = nothing happens, keyboard still works.
 
 Troubleshooting: `systemctl status summer-hid-injector` on the board;
 `POST http://localhost:7000/api/nudge` moves the mouse if the chain is alive.
 If a sketch build ever blocks a deploy, re-run install-game.sh with
-`SUMMER_NO_BRIDGE=1` for a sketch-less install.
+`SUMMER_NO_BRIDGE=1` for a sketch-less install:
+`adb shell "SUMMER_NO_BRIDGE=1 bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"`
 
 Note: the injector accepts UDP on 0.0.0.0:5555 (Arduino's design, unmodified) — on a
 shared network, anyone can inject input to the board. Acceptable for the jam; do not
