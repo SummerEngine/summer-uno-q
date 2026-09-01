@@ -184,15 +184,16 @@ line of gameplay code:**
 
 | Physical control | Key the game must bind |
 |---|---|
-| Joystick (4-way) | Arrow keys — fixed, not remappable |
-| Button A | A |
-| Button B | S |
-| Button C | ENTER |
+| Joystick (4-way) | Arrow keys — fixed, not remappable. Bind **WASD too**, as aliases of the same actions |
+| Button A | J |
+| Button B | K |
+| Button C | L |
 
-Design inside this budget — one stick, three buttons — and input works on the handheld
-with zero configuration. Extra bindings (WASD, Space) are fine as laptop conveniences,
-but every action must be reachable from the keys above. Nobody remaps anything in a
-browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
+Design inside this budget — one stick, three buttons — and the same game plays
+naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
+(left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
+near WASD: action keys must never collide with movement keys. Nobody remaps anything
+in a browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
 input") has a one-command remap.
 
 Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means

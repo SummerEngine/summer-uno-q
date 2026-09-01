@@ -216,10 +216,11 @@ controls arrive as ordinary keyboard events — bind these in the game:
 | Physical | Key |
 |---|---|
 | Joystick (d-pad mode) | Arrow keys |
-| Button A / B / C | A / S / ENTER |
+| Button A / B / C | J / K / L |
 
 **Build the game to this map and no remapping is ever needed** — movement on arrow
-keys (that one is fixed in the bridge, not remappable), actions on A / S / ENTER.
+keys (that one is fixed in the bridge, not remappable), actions on J / K / L (set by
+the installer; deliberately far from WASD so PC play never collides with movement).
 The user never opens a config page; keymapping is your job, not theirs.
 
 If the game's bindings genuinely can't match the map (an existing project, a key the

@@ -100,6 +100,17 @@ EOF
     cp -rp "$BRIDGE/python" "$T/app/python"
     cp -rp "$BRIDGE/sketch" "$T/app/sketch"
     cp -rp "$BRIDGE/ui" "$T/app/ui"
+    # Our default button map is J/K/L, not the bridge's shipped A/S/ENTER — A and S
+    # collide with WASD movement on a PC keyboard. Patched in the staged copy so the
+    # vendored bridge/ stays verbatim.
+    python3 - "$T/app/python/config.json" <<'PYEOF'
+import json, sys
+p = sys.argv[1]
+c = json.load(open(p))
+for slot, key in (("3e:b0", "J"), ("3e:b1", "K"), ("3e:b2", "L")):
+    c["keymap"][slot] = {"type": "key", "key": key, "modifiers": [], "mode": "hold"}
+json.dump(c, open(p, "w"), indent=2)
+PYEOF
     # A team's saved key map survives redeploys: keep the old app's config.json.
     if [ -f "$APP/python/config.json" ]; then
         cp "$APP/python/config.json" "$T/app/python/config.json"
