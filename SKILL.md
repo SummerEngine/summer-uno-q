@@ -218,11 +218,22 @@ controls arrive as ordinary keyboard events — bind these in the game:
 | Joystick (d-pad mode) | Arrow keys |
 | Button A / B / C | A / S / ENTER |
 
-The three buttons (A/S/ENTER) are remappable at `http://<board>:7000` while the game
-app runs, and persist in `python/config.json`. The joystick's d-pad mode always sends
-arrow keys — that mapping is fixed, not remappable.
-Remaps survive normal redeploys; a `SUMMER_NO_BRIDGE=1` deploy discards them.
-No Modulinos attached = nothing happens, keyboard still works.
+**Build the game to this map and no remapping is ever needed** — movement on arrow
+keys (that one is fixed in the bridge, not remappable), actions on A / S / ENTER.
+The user never opens a config page; keymapping is your job, not theirs.
+
+If the game's bindings genuinely can't match the map (an existing project, a key the
+design demands), remap the buttons yourself while the game app runs — one command,
+no browser:
+
+```
+adb shell "curl -s -X POST http://localhost:7000/api/keymap -H 'Content-Type: application/json' -d '{\"3e:b0\":{\"type\":\"key\",\"key\":\"W\",\"modifiers\":[],\"mode\":\"hold\"}}'"
+```
+
+`3e:b0`/`3e:b1`/`3e:b2` are buttons A/B/C; `key` takes A–Z, SPACE, ENTER and arrow
+names; `mode` is `hold` (key down while pressed) or `tap`. The remap persists in the
+app's `python/config.json` and survives normal redeploys; a `SUMMER_NO_BRIDGE=1`
+deploy discards it. No Modulinos attached = nothing happens, keyboard still works.
 
 Troubleshooting: `systemctl status summer-hid-injector` on the board;
 `POST http://localhost:7000/api/nudge` moves the mouse if the chain is alive.

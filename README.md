@@ -174,11 +174,26 @@ window/stretch/aspect="keep"
 
 **Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
-game over, level select: all of it must work with arrows + Enter/Space alone. A
-mouse-only "Play" button is a game nobody can start. In practice: `grab_focus()` the
-first button of every menu when it appears, set focus neighbors so arrows move between
-controls, and walk every screen start-to-finish with only the keyboard before calling
-it done.
+game over, level select: all of it must work with the keyboard alone. A mouse-only
+"Play" button is a game nobody can start. In practice: `grab_focus()` the first button
+of every menu when it appears, set focus neighbors so arrows move between controls,
+and walk every screen start-to-finish with only the keyboard before calling it done.
+
+**Bind exactly the handheld's keys — this is the controller, decided before the first
+line of gameplay code:**
+
+| Physical control | Key the game must bind |
+|---|---|
+| Joystick (4-way) | Arrow keys — fixed, not remappable |
+| Button A | A |
+| Button B | S |
+| Button C | ENTER |
+
+Design inside this budget — one stick, three buttons — and input works on the handheld
+with zero configuration. Extra bindings (WASD, Space) are fine as laptop conveniences,
+but every action must be reachable from the keys above. Nobody remaps anything in a
+browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
+input") has a one-command remap.
 
 Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
 rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
