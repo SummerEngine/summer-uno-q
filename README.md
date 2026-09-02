@@ -231,6 +231,18 @@ line of gameplay code:**
 | Button B | K |
 | Button C | L |
 
+**Hide the mouse pointer in code** — one line in any autoload's `_ready()`:
+
+```gdscript
+Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+```
+
+A handheld has no mouse, so X's pointer just sits on top of the game as screen litter.
+This hides it for the game's window only — it comes back the moment the game exits.
+It must be code: the `display/mouse_cursor/custom_image` project setting gets stripped
+from `project.godot` by the editor's settings pass on export, and no window/video mode
+hides the pointer on this board (verified — exclusive fullscreen still shows it).
+
 Design inside this budget — one stick, three buttons — and the same game plays
 naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
 (left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
