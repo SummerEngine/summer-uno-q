@@ -25,19 +25,7 @@ printf '[Desktop Entry]\nType=Application\nName=Summer no-blank\nExec=xset s off
 if [ -f /home/arduino/.Xauthority ]; then
     DISPLAY=:0 XAUTHORITY=/home/arduino/.Xauthority xset s off -dpms 2>/dev/null || true
 fi
-# No mouse on a handheld — hide the X cursor for the whole session (hide-cursor.py
-# is pushed next to this script; keep a copy under ~/.summer so app installs can't
-# remove it).
-mkdir -p /home/arduino/.summer
-cp -f /home/arduino/hide-cursor.py /home/arduino/.summer/hide-cursor.py 2>/dev/null || true
-cat > /home/arduino/.config/autostart/summer-hide-cursor.desktop <<'DESK'
-[Desktop Entry]
-Type=Application
-Name=Summer hide cursor
-Exec=python3 /home/arduino/.summer/hide-cursor.py
-DESK
-pgrep -f hide-cursor.py >/dev/null || (DISPLAY=:0 XAUTHORITY=/home/arduino/.Xauthority nohup python3 /home/arduino/.summer/hide-cursor.py >/dev/null 2>&1 &)
-echo "1/5 screen locker + blanking disabled, cursor hidden"
+echo "1/5 screen locker + blanking disabled"
 
 # 2. Desktop autologin (needs sudo, once). Without it the board boots to a login
 #    screen and no game can reach the display.

@@ -193,7 +193,6 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` â
    adb push board/bridge /home/arduino/.summer/
    adb push kit/python3-evdev.deb /home/arduino/python3-evdev.deb
    adb push kit/arduino15-libs.tar.gz /home/arduino/arduino15-libs.tar.gz
-   adb push board/hide-cursor.py /home/arduino/
    adb push board/setup-board.sh /home/arduino/
    adb shell "sed -i 's/\r$//' /home/arduino/setup-board.sh"
    ```
