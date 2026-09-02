@@ -329,11 +329,19 @@ sentences, not a report.
   targets. `os_same_file_description ... DRM fds` is the same kind of noise. Recognise
   them, don't chase them, and don't paste them at the user — they never see the game log
   and quoting an `ERROR:` line at someone whose deploy just succeeded only worries them.
-- **On success: one happy line, then hand them the wheel.** Something like "Your game's
-  running on the board ☀️ — go play, and tell me what you want changed."
-  That's the whole message. No monitor/cable talk, no explanation of virtual displays,
-  no `app logs` command, no App Lab click-through — when it worked, nobody wants the
-  mechanics. Keep `app list` and `app logs` for when something actually failed.
+- **On success: one happy line, then the controls, then hand them the wheel.** The player
+  is holding a Modulino pad, not a keyboard — so name the physical controls and say what
+  each one does *in this game*. You wrote the bindings, so you know: translate J/K/L back
+  into Button A/B/C and their in-game action. Something like:
+
+  > Voxel Island is on the board ☀️ — joystick to move, **A** to jump, **B** to place a
+  > block, **C** to pause. Go play, and tell me what you want changed.
+
+  Never tell them to press W/A/S/D or J/K/L: those are the keys the pad sends under the
+  hood, and nobody at the table has a keyboard. If a button is unused in this game, leave
+  it out rather than listing it as idle. That's the whole message — no monitor/cable talk,
+  no explanation of virtual displays, no `app logs` command, no App Lab click-through.
+  Keep `app list` and `app logs` for when something actually failed.
 - Don't tell them to open App Lab, browse My Apps, or press Run to start it — the game is
   already running.
 - **If you drove the game yourself to verify it** (injected input, played it, crashed it),
