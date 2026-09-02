@@ -6,6 +6,7 @@
 # Usage:  install-game.sh <export-zip> <game name> [icon-emoji]
 # Update: run again with the same name — replaces the game in place.
 # Env:    FORCE=1 to overwrite a folder that was not created by this installer.
+#         SUMMER_NO_BRIDGE=1 to assemble without the Modulino bridge.
 set -euo pipefail
 
 ZIP=${1:?usage: install-game.sh <export-zip> <game name> [icon-emoji]}
@@ -13,6 +14,8 @@ NAME=${2:?usage: install-game.sh <export-zip> <game name> [icon-emoji]}
 EMOJI=${3:-🎮}
 APPS=/home/arduino/ArduinoApps
 IMAGE=summer-game-runner:0.1.0
+BRIDGE=/home/arduino/.summer/bridge
+NO_BRIDGE=${SUMMER_NO_BRIDGE:-0}
 
 NAME=${NAME//\"/}
 SLUG=$(echo "$NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
@@ -22,6 +25,12 @@ APP="$APPS/$SLUG"
 [ -f "$ZIP" ] || { echo "ERROR: zip not found: $ZIP"; exit 1; }
 docker image inspect "$IMAGE" >/dev/null 2>&1 || {
     echo "ERROR: runner image $IMAGE missing — run setup-board.sh first"; exit 1; }
+
+if [ "$NO_BRIDGE" != "1" ] && [ ! -f "$BRIDGE/python/main.py" ]; then
+    echo "ERROR: Modulino bridge files missing at $BRIDGE — re-run setup-board.sh"
+    echo "       (or set SUMMER_NO_BRIDGE=1 to install without Modulino support)"
+    exit 1
+fi
 
 if [ -d "$APP" ] && [ ! -f "$APP/.summer-game" ] && [ "${FORCE:-0}" != "1" ]; then
     echo "ERROR: $APP exists and was not created by this installer. FORCE=1 to overwrite."
@@ -56,16 +65,16 @@ cd - >/dev/null
 # --- App Lab app skeleton ---------------------------------------------------
 touch "$T/app/.summer-game"
 
-cat > "$T/app/app.yaml" <<EOF
+if [ "$NO_BRIDGE" = "1" ]; then
+    cat > "$T/app/app.yaml" <<EOF
 name: "$NAME"
 icon: $EMOJI
 description: "$NAME — built with Summer Engine"
 bricks:
   - game_runner:
 EOF
-
-mkdir -p "$T/app/python"
-cat > "$T/app/python/main.py" <<'EOF'
+    mkdir -p "$T/app/python"
+    cat > "$T/app/python/main.py" <<'EOF'
 # The game runs in the game_runner brick container; this mandatory entry point
 # keeps the App alive so App Lab shows it as running until the user stops it.
 import signal
@@ -77,6 +86,36 @@ print("game runs in the game_runner brick; python side idling.")
 while True:
     time.sleep(60)
 EOF
+else
+    cat > "$T/app/app.yaml" <<EOF
+name: "$NAME"
+icon: $EMOJI
+description: "$NAME — built with Summer Engine"
+bricks:
+  - game_runner:
+  - arduino:web_ui: {}
+EOF
+    # Bridge rides inside the game app (App Lab runs one app at a time, so it
+    # cannot be its own app). Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.
+    cp -rp "$BRIDGE/python" "$T/app/python"
+    cp -rp "$BRIDGE/sketch" "$T/app/sketch"
+    cp -rp "$BRIDGE/ui" "$T/app/ui"
+    # Our default button map is J/K/L, not the bridge's shipped A/S/ENTER — A and S
+    # collide with WASD movement on a PC keyboard. Patched in the staged copy so the
+    # vendored bridge/ stays verbatim.
+    python3 - "$T/app/python/config.json" <<'PYEOF'
+import json, sys
+p = sys.argv[1]
+c = json.load(open(p))
+for slot, key in (("3e:b0", "J"), ("3e:b1", "K"), ("3e:b2", "L")):
+    c["keymap"][slot] = {"type": "key", "key": key, "modifiers": [], "mode": "hold"}
+json.dump(c, open(p, "w"), indent=2)
+PYEOF
+    # A team's saved key map survives redeploys: keep the old app's config.json.
+    if [ -f "$APP/python/config.json" ]; then
+        cp "$APP/python/config.json" "$T/app/python/config.json"
+    fi
+fi
 
 cat > "$T/app/run-game.sh" <<'EOF'
 #!/bin/sh
@@ -118,8 +157,16 @@ services:
       XAUTHORITY: /tmp/.Xauthority
       XDG_RUNTIME_DIR: /run/user/1000
       HOME: /tmp
+      GAME_FLAGS: "--fullscreen"
     entrypoint: ["/bin/sh", "/game/run-game.sh"]
 EOF
+
+# Carry the old app's build cache (sketch artifacts + python venv) into the new
+# assembly - without it every redeploy recompiles the unchanged bridge sketch,
+# ~4.5 min instead of ~1. -p above keeps sketch mtimes stable for the same reason.
+if [ -d "$APP/.cache" ]; then
+    cp -a "$APP/.cache" "$T/app/.cache"
+fi
 
 # --- Install & start ---------------------------------------------------------
 arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true

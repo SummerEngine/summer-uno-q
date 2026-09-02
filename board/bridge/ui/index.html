@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Modulino HID Bridge — Arcade Emulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h2>Modulino HID Bridge — Arcade Emulator</h2>
+  <div id="status">Loading…</div>
+  <div id="hidBanner"><strong>HID output is disabled.</strong> The app will not send mouse or key events until you re-enable it.</div>
+
+  <div id="mainContent">
+
+    <!-- ── HID master toggle (always visible) ── -->
+    <fieldset>
+      <legend>HID output</legend>
+      <div class="row">
+        <div class="card" style="min-width:280px">
+          <label><input id="hidEnabled" type="checkbox" checked> Enable HID output (mouse &amp; keys)</label>
+          <small>When off, the app releases any held keys/buttons and mutes further HID events.</small>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- ── Discovered devices ── -->
+    <fieldset>
+      <legend>Devices</legend>
+      <div id="deviceList" class="row"><small>Scanning bus…</small></div>
+      <button id="rescan" style="margin-top:10px">Rescan I²C bus</button>
+      <small style="margin-left:8px">Use this if devices appear missing after startup.</small>
+    </fieldset>
+
+    <!-- ── Live data ── -->
+    <fieldset>
+      <legend>Live data</legend>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <span><strong>HID</strong> <span id="live_hid">—</span></span>
+        <span><strong>Last packet</strong> <span id="live_ts">—</span></span>
+        <button id="nudge">Nudge cursor</button>
+      </div>
+      <div id="liveDevices" class="row"><small>Waiting for data…</small></div>
+    </fieldset>
+
+    <!-- ── Global / Pointer settings (shown only when a joystick is detected) ── -->
+    <fieldset id="pointerSettings" class="hidden">
+      <legend>Joystick / Pointer settings</legend>
+
+      <div class="row" style="margin-top:8px">
+        <div class="card">
+          <label>Joystick mode
+            <select id="mode">
+              <option value="relative">Relative (deflection → pixel deltas)</option>
+              <option value="dpad" selected>D-Pad (simulate arrow keys)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Relative config -->
+      <div class="row hidden" id="rel_cfg">
+        <div class="card">
+          <label for="sensX">Sensitivity X (px/unit): <span id="sensXv"></span></label>
+          <input id="sensX" type="range" min="10" max="400" step="5"/>
+          <label for="sensY">Sensitivity Y (px/unit): <span id="sensYv"></span></label>
+          <input id="sensY" type="range" min="10" max="400" step="5"/>
+        </div>
+        <div class="card">
+          <label for="accel">Acceleration: <span id="accelv"></span></label>
+          <input id="accel" type="range" min="0" max="2" step="0.05"/>
+          <label for="dead">Dead zone: <span id="deadv"></span></label>
+          <input id="dead" type="range" min="0" max="0.3" step="0.01"/>
+          <label><input id="invertY" type="checkbox"> Invert Y axis</label>
+        </div>
+      </div>
+
+      <!-- D-Pad config -->
+      <div class="row hidden" id="dpad_cfg">
+        <div class="card">
+          <div class="kv"><span>Threshold (|n|)</span><input id="dpadThreshold" type="number" min="0.05" max="0.95" step="0.01" value="0.35"></div>
+          <div class="kv"><span>Release factor</span><input id="dpadReleaseFactor" type="number" min="0.50" max="0.95" step="0.01" value="0.70"></div>
+        </div>
+        <div class="card">
+          <label>Diagonal policy
+            <select id="dpadDiagonal">
+              <option value="stronger">Prefer stronger axis</option>
+              <option value="both" selected>Allow diagonals</option>
+            </select>
+          </label>
+        </div>
+        <div class="card">
+          <label><input id="dpadRepeat" type="checkbox" checked> Auto-repeat</label>
+          <div class="kv"><span>Initial delay (ms)</span><input id="dpadInitialDelayMs" type="number" min="100" step="10" value="200"></div>
+          <div class="kv"><span>Repeat cadence (ms)</span><input id="dpadRepeatMs" type="number" min="30" step="5" value="70"></div>
+        </div>
+      </div>
+
+      <button id="saveSettings" style="margin-top:10px">Save pointer settings</button>
+    </fieldset>
+
+    <!-- ── Input mapping (built dynamically) ── -->
+    <fieldset id="mappingSection">
+      <legend>Input mapping</legend>
+      <div id="mappingRows" class="row"><small>Waiting for devices…</small></div>
+      <button id="saveKeymap" style="margin-top:10px">Save mapping</button>
+    </fieldset>
+
+    <!-- ── Per-device settings (built dynamically) ── -->
+    <div id="deviceConfigSections"></div>
+
+  </div><!-- #mainContent -->
+
+  <script src="app.js"></script>
+</body>
+</html>

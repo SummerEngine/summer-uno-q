@@ -123,9 +123,32 @@ The user can keep Summer open on the same project while you do this — a headle
 export alongside a running editor is fine, and is in fact faster, since the import
 caches are warm.
 
-If the export fails for missing export templates, that is not something to work
-around: the engine fetches templates keyed to its own build and there is no fallback.
-Report it and get an organizer.
+**If the export fails for missing export templates, install them from the public
+`summer-builds` release** — the app does not ship Linux templates; this is the normal
+path, not an error:
+
+1. `"<engine>" --version` prints e.g. `4.7.2.stable.mono.custom_build.a8e5ca520`.
+   The part before `.custom_build` is the **version folder** (`4.7.2.stable.mono`);
+   the part after it is the **build hash**.
+2. List `https://api.github.com/repos/SummerEngine/summer-builds/releases/tags/templates`
+   and pick the `.tpz` asset that matches your build — assets are named either by
+   version config (`summer-linux-templates-<version folder>.tpz`, e.g.
+   `...-4.7.2.stable.mono.tpz`) or by engine commit
+   (`summer-linux-templates-<full-hash>.tpz`, where the full hash starts with your
+   build hash). Prefer the version-config name when both exist. Download it
+   (~115 MB, no auth — the repo is public).
+3. A `.tpz` is a zip with everything under a `templates/` folder. Extract it and move
+   the **contents** of `templates/` (not the folder itself) into:
+   - Windows: `%APPDATA%\Godot\export_templates\<version folder>\`
+   - macOS: `~/Library/Application Support/Godot/export_templates/<version folder>/`
+   Create the version folder if it doesn't exist. Result:
+   `.../export_templates/4.7.2.stable.mono/linux_release.arm64` (plus its siblings).
+4. Re-run the export.
+
+If no asset matches the build hash, templates for this engine build have not been
+published — that IS an organizer problem: they must run the `summer_linux_templates`
+workflow in the engine repo for this commit. Don't work around it with a
+different-version tpz; templates are keyed to the exact build for a reason.
 
 ## Prerequisites (once per computer)
 
@@ -153,12 +176,24 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
 
 1. Download the runner image (~105 MB) from
    `https://github.com/SummerEngine/summer-builds/releases/download/game-runner-0.1.0/summer-game-runner-0.1.0.tar.gz`
-2. Push it and the setup script:
+2. Push it, the Modulino bridge, and the setup script:
    ```
    adb push summer-game-runner-0.1.0.tar.gz /home/arduino/
+   adb shell "mkdir -p /home/arduino/.summer"
+   adb push board/bridge /home/arduino/.summer/
+   adb push kit/python3-evdev.deb /home/arduino/python3-evdev.deb
+   adb push kit/arduino15-libs.tar.gz /home/arduino/arduino15-libs.tar.gz
    adb push board/setup-board.sh /home/arduino/
    adb shell "sed -i 's/\r$//' /home/arduino/setup-board.sh"
    ```
+   The bridge directory is **mandatory**: `setup-board.sh` installs the system-wide
+   HID injector service and refuses to run without it. (`SUMMER_NO_BRIDGE=1` is a
+   separate, deploy-time flag — see "Modulino input" below — that skips bundling
+   the bridge into one game's app; it does not change what setup needs.) The two
+   `kit/` files are committed in this repo — push both, always. They are what makes
+   setup and the first deploy work on a board with no network; without them setup
+   falls back to `apt-get`, which fails on an offline board. Do not tell the user
+   the board needs internet — with the kit pushed, it doesn't.
 3. The setup script needs sudo, and sudo prompts for a password — **your shell has
    no interactive stdin, so do NOT run this step yourself; it will hang.** Give the
    user this command to run in their own terminal, and wait for them to confirm:
@@ -187,13 +222,52 @@ adb shell "sed -i 's/\r$//' /home/arduino/install-game.sh"
 adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"
 ```
 
-Success is a line starting `OK:`. Updating an existing
-game is the same command with the same name. On failure the installer prints the
-app logs — read them before retrying.
+Success is a line starting `OK:`. The first deploy of a game compiles and flashes
+the bridge sketch — expect **~5 minutes** with no output during the build; it is not
+hung. Updating an existing game is the same command with the same name and takes
+~30 seconds. On failure the installer prints the app logs — read them before retrying.
 
 **Push the exact zip you just exported — never glob for it.** A project that has been
 exported before can hold several arm64 zips in `build/` under different names; picking
 one with a wildcard silently ships a build from days ago that looks entirely correct.
+
+## Modulino input
+
+Every deployed game automatically includes Arduino's Modulino HID bridge. Physical
+controls arrive as ordinary keyboard events — bind these in the game:
+
+| Physical | Key |
+|---|---|
+| Joystick (d-pad mode) | Arrow keys |
+| Button A / B / C | J / K / L |
+
+**Build the game to this map and no remapping is ever needed** — movement on arrow
+keys (that one is fixed in the bridge, not remappable), actions on J / K / L (set by
+the installer; deliberately far from WASD so PC play never collides with movement).
+The user never opens a config page; keymapping is your job, not theirs.
+
+If the game's bindings genuinely can't match the map (an existing project, a key the
+design demands), remap the buttons yourself while the game app runs — one command,
+no browser:
+
+```
+adb shell "curl -s -X POST http://localhost:7000/api/keymap -H 'Content-Type: application/json' -d '{\"3e:b0\":{\"type\":\"key\",\"key\":\"W\",\"modifiers\":[],\"mode\":\"hold\"}}'"
+```
+
+`3e:b0`/`3e:b1`/`3e:b2` are buttons A/B/C; `key` takes A–Z, SPACE, ENTER and arrow
+names; `mode` is `hold` (key down while pressed) or `tap`. The remap persists in the
+app's `python/config.json` and survives normal redeploys; a `SUMMER_NO_BRIDGE=1`
+deploy discards it. No Modulinos attached = nothing happens, keyboard still works.
+
+Troubleshooting: `systemctl status summer-hid-injector` on the board;
+`POST http://localhost:7000/api/nudge` moves the mouse if the chain is alive.
+If a sketch build ever blocks a deploy, re-run install-game.sh with
+`SUMMER_NO_BRIDGE=1` for a sketch-less install:
+`adb shell "SUMMER_NO_BRIDGE=1 bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"`
+
+Note: the injector accepts UDP on 0.0.0.0:5555 (Arduino's design, unmodified) — on a
+shared network, anyone can inject input to the board. Acceptable for the jam; do not
+put boards on hostile networks.
 
 ## What to tell the user
 
@@ -207,7 +281,9 @@ sentences, not a report.
   want detail.
 - Shape of the sudo handoff, roughly:
 
-  > One step needs your terminal — it'll ask for the board's sudo password ☀️
+  > One step needs your terminal — it sets the board up for games, one time:
+  > screen-lock off, autologin, the game runtime, and the controller-input service.
+  > It'll ask for the board's sudo password (a fresh board asks you to create one) ☀️
   >
   > ```
   > adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
@@ -227,13 +303,19 @@ sentences, not a report.
   targets. `os_same_file_description ... DRM fds` is the same kind of noise. Recognise
   them, don't chase them, and don't paste them at the user — they never see the game log
   and quoting an `ERROR:` line at someone whose deploy just succeeded only worries them.
-- **On success: one happy line and the next physical step.** Something like "Your game's on
-  the board ☀️ — plug it into a monitor (HDMI/DSI) and go play."
-  That's the whole message. No explanation of virtual displays, no `app logs` command, no
-  App Lab click-through — when it worked, nobody wants the mechanics. Keep `app list` and
-  `app logs` for when something actually failed.
+- **On success: one happy line, then hand them the wheel.** Something like "Your game's
+  running on the board ☀️ — go play, and tell me what you want changed."
+  That's the whole message. No monitor/cable talk, no explanation of virtual displays,
+  no `app logs` command, no App Lab click-through — when it worked, nobody wants the
+  mechanics. Keep `app list` and `app logs` for when something actually failed.
 - Don't tell them to open App Lab, browse My Apps, or press Run to start it — the game is
-  already running, and none of that is reachable without a screen on the board anyway.
+  already running.
+- **If you drove the game yourself to verify it** (injected input, played it, crashed it),
+  shut it down when you're done: `adb shell "arduino-app-cli app stop user:<slug>"`.
+  Never leave your test session running on the board. Then your final message offers the
+  start instead of claiming it: "Deployed and tested ☀️ — say go and I'll start it for
+  you to play, or tell me what you want changed." (Starting it back up is
+  `adb shell "arduino-app-cli app start user:<slug>"` — seconds, no rebuild.)
 - Then say how to redeploy after edits: same command, same name, updates in place.
 
 ## Tone
@@ -252,7 +334,7 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 |---|---|
 | `adb devices` empty | Charge-only cable, hub in the path, or board still booting — direct data cable, wait 60 s |
 | installer: "not arm64" | You exported with the wrong preset — re-read `export_presets.cfg` for the one with `architecture="arm64"` and export again |
-| export fails: no export template found | Engine build has no matching templates published; no fallback exists — get an organizer, don't work around it |
+| export fails: no export template found | Normal on a fresh install — download the matching tpz from summer-builds and install it (see Export, step "missing export templates"). Only if no asset matches the build hash: get an organizer |
 | installer: "runner image missing" | First-deploy setup was skipped — run the fresh-board flow |
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |

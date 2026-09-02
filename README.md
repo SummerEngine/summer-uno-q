@@ -57,6 +57,15 @@ Ask before you scaffold. One question, plain language: *what kind of game are yo
 about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", "an arcade
 high-score thing", "a little racer".
 
+**The controller is decided before the game is: a 4-way stick and three buttons.**
+That is the entire input surface — movement on arrows/WASD, actions on J, K, L (the
+exact bindings are in Step 5). Every mechanic, menu, and interaction must be playable
+with those seven keys and nothing else: no mouse, no text entry, no fourth button.
+Treat it the way a Game Boy dev treated the d-pad and A/B — a creative constraint to
+design *into* from the first idea, not a port target for later. If a proposed mechanic
+needs more inputs, reshape the mechanic now; carry this constraint into
+`brainstorm-game` so the design never drifts off the pad.
+
 Then match it against what already exists — `npx -y summer-engine@latest list templates`
 shows the set, and there are 16 community ones (2D platformer, RPG, grid puzzle, tower
 defence, survivors-like; 3D racing, FPS, third-person, voxel, city kit, …). If one fits
@@ -172,7 +181,34 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 ```
 
-Give the game keyboard controls — buttons wired to the board arrive as keystrokes.
+**Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
+arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
+game over, level select: all of it must work with the keyboard alone. A mouse-only
+"Play" button is a game nobody can start. In practice: `grab_focus()` the first button
+of every menu when it appears, set focus neighbors so arrows move between controls,
+and walk every screen start-to-finish with only the keyboard before calling it done.
+
+**Bind exactly the handheld's keys — this is the controller, decided before the first
+line of gameplay code:**
+
+| Physical control | Key the game must bind |
+|---|---|
+| Joystick (4-way) | Arrow keys — fixed, not remappable. Bind **WASD too**, as aliases of the same actions |
+| Button A | J |
+| Button B | K |
+| Button C | L |
+
+Design inside this budget — one stick, three buttons — and the same game plays
+naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
+(left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
+near WASD: action keys must never collide with movement keys. Nobody remaps anything
+in a browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
+input") has a one-command remap.
+
+Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
+rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
+`window/stretch/mode="viewport"`: the game keeps rendering at 960x540 and scales up for
+almost nothing.
 
 If frames drop, measure before optimising — `tune-performance`.
 
@@ -271,11 +307,29 @@ from what they tell you, don't assume one.
 |---|---|---|
 | `SKILL.md` | agent | ship-to-unoq: inputs, prerequisites, commands, troubleshooting |
 | `board/setup-board.sh` | board | One-time fresh-board provisioning (idempotent) |
-| `board/install-game.sh` | board | Zip → App Lab app with `game_runner` brick → start |
+| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick, the `arduino:web_ui` brick, and the bridge files → start |
+| `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
+| `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
+
+## Kit prep (maintainers)
+
+Two offline artifacts are committed in `kit/` so a fresh clone works on a board with
+no network. Regenerate them only when the pinned versions change:
+
+- `kit/python3-evdev.deb` — on any Debian trixie arm64 (the board works):
+  `apt-get download python3-evdev`, then `adb pull` the deb and rename it to
+  `kit/python3-evdev.deb` — the push flow and setup script expect that fixed name.
+  Verify with `dpkg -I kit/python3-evdev.deb` that Depends lists only python3/libc
+  packages the board already has.
+- `kit/arduino15-libs.tar.gz` — from a board that has built the bridge sketch once:
+  `tar -czf arduino15-libs.tar.gz -C /home/arduino .arduino15/internal` and pull.
+  This warms the library cache so the first deploy builds offline; the zephyr
+  platform itself is assumed factory-present (verified against a used board only —
+  re-check on a factory-fresh one).
 
 ## Notes
 
@@ -285,6 +339,11 @@ The prebuilt runner image (~105 MB) is a release asset:
 - Plug the Uno Q in with a USB-C **data** cable, straight to the computer, no hub. Allow
   about a minute after power-up before `adb devices` sees it.
 - Multiple games coexist on one board; re-deploying the same name updates in place.
+- **Modulino controllers:** every deployed game gets input from attached Modulino
+  buttons and a joystick for free, delivered as ordinary keyboard events — see
+  `SKILL.md`'s "Modulino input" section for the key map, the in-game remap UI, and
+  troubleshooting. The bridge is Arduino's, vendored verbatim in `board/bridge/`;
+  see `board/bridge/ATTRIBUTION.md`.
 - Remove a game — the `docker rm` matters, `app stop` leaves the container behind and a
   stopped container pins the ~325 MB runner image on the board's cramped rootfs:
   ```bash

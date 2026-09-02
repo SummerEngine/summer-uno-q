@@ -1,0 +1,68 @@
+{
+  "settings": {
+    "hidEnabled": true,
+    "sensX": 10,
+    "sensY": 10,
+    "accel": 0.05,
+    "dead": 0.04,
+    "invertY": true,
+    "mode": "dpad",
+    "dpadThreshold": 0.3,
+    "dpadDiagonal": "both",
+    "dpadRepeat": true,
+    "dpadInitialDelayMs": 350,
+    "dpadRepeatMs": 500,
+    "dpadReleaseFactor": 0.7
+  },
+  "keymap": {
+    "3e:b0": {
+      "type": "key",
+      "key": "A",
+      "modifiers": [],
+      "mode": "hold"
+    },
+    "3e:b1": {
+      "type": "key",
+      "key": "S",
+      "modifiers": [],
+      "mode": "hold"
+    },
+    "3e:b2": {
+      "type": "key",
+      "key": "ENTER",
+      "modifiers": [],
+      "mode": "hold"
+    },
+    "64:b0": {
+      "type": "mouse",
+      "button": "left",
+      "mode": "tap"
+    },
+    "64:b1": {
+      "type": "mouse",
+      "button": "right",
+      "mode": "tap"
+    },
+    "64:b2": {
+      "type": "key",
+      "key": "CTRL",
+      "modifiers": [],
+      "mode": "hold"
+    },
+    "29:near": {
+      "type": "scroll",
+      "direction": "up",
+      "clicks": 1
+    },
+    "29:far": {
+      "type": "scroll",
+      "direction": "down",
+      "clicks": 1
+    },
+    "2c:jp": {
+      "type": "mouse",
+      "button": "left",
+      "mode": "tap"
+    }
+  }
+}
