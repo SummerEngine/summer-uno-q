@@ -57,6 +57,15 @@ Ask before you scaffold. One question, plain language: *what kind of game are yo
 about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", "an arcade
 high-score thing", "a little racer".
 
+**The controller is decided before the game is: a 4-way stick and three buttons.**
+That is the entire input surface — movement on arrows/WASD, actions on J, K, L (the
+exact bindings are in Step 5). Every mechanic, menu, and interaction must be playable
+with those seven keys and nothing else: no mouse, no text entry, no fourth button.
+Treat it the way a Game Boy dev treated the d-pad and A/B — a creative constraint to
+design *into* from the first idea, not a port target for later. If a proposed mechanic
+needs more inputs, reshape the mechanic now; carry this constraint into
+`brainstorm-game` so the design never drifts off the pad.
+
 Then match it against what already exists — `npx -y summer-engine@latest list templates`
 shows the set, and there are 16 community ones (2D platformer, RPG, grid puzzle, tower
 defence, survivors-like; 3D racing, FPS, third-person, voxel, city kit, …). If one fits
