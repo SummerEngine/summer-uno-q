@@ -104,6 +104,12 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 ```
 
+Under `[application]`:
+
+```ini
+run/max_fps=60
+```
+
 And under `[display]`:
 
 ```ini
@@ -113,6 +119,10 @@ window/size/viewport_width=960
 window/size/viewport_height=540
 window/stretch/mode="viewport"
 ```
+
+`max_fps=60` is about pacing, not thrift: a game that oscillates between 60 and 98
+against a 60 Hz screen microstutters; locked at 60 it feels smoother than the higher
+average ever did.
 
 **The design resolution IS the render resolution — cap it at 960x540.** Games launch
 fullscreen, and with `stretch/mode="viewport"` the game renders at the design size and
@@ -221,12 +231,24 @@ line of gameplay code:**
 | Button B | K |
 | Button C | L |
 
+**Hide the mouse pointer in code** — one line in any autoload's `_ready()`:
+
+```gdscript
+Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+```
+
+A handheld has no mouse, so X's pointer just sits on top of the game as screen litter.
+This hides it for the game's window only — it comes back the moment the game exits.
+It must be code: the `display/mouse_cursor/custom_image` project setting gets stripped
+from `project.godot` by the editor's settings pass on export, and no window/video mode
+hides the pointer on this board (verified — exclusive fullscreen still shows it).
+
 Design inside this budget — one stick, three buttons — and the same game plays
 naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
 (left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
-near WASD: action keys must never collide with movement keys. Nobody remaps anything
-in a browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
-input") has a one-command remap.
+near WASD: action keys must never collide with movement keys. Control changes go through the
+agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
+deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
 Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
 rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
@@ -330,7 +352,7 @@ from what they tell you, don't assume one.
 |---|---|---|
 | `SKILL.md` | agent | ship-to-unoq: inputs, prerequisites, commands, troubleshooting |
 | `board/setup-board.sh` | board | One-time fresh-board provisioning (idempotent) |
-| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick, the `arduino:web_ui` brick, and the bridge files → start |
+| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick and the bridge files → start |
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
 | `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |

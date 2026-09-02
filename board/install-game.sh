@@ -93,7 +93,6 @@ icon: $EMOJI
 description: "$NAME — built with Summer Engine"
 bricks:
   - game_runner:
-  - arduino:web_ui: {}
 EOF
     # Bridge rides inside the game app (App Lab runs one app at a time, so it
     # cannot be its own app). Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.

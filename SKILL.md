@@ -261,21 +261,32 @@ actions on J / K / L (also set by the installer; deliberately away from WASD so 
 two hands never collide). The user never opens a config page; keymapping is your
 job, not theirs.
 
-If the game's bindings genuinely can't match the map (an existing project, a key the
-design demands), remap the buttons yourself while the game app runs — one command,
-no browser:
+**When the user asks for different controls, that request comes to you, the agent —
+there is no config page.** Preferred route: change the GAME's own bindings (Input
+Map) so it matches the pad map — the keys the pad sends are the fixed contract.
+Only when the game's bindings genuinely can't match (an existing project, a key the
+design demands) remap the bridge's buttons instead: edit the deployed app's
+`python/config.json` on the board, then restart the app:
 
 ```
-adb shell "curl -s -X POST http://localhost:7000/api/keymap -H 'Content-Type: application/json' -d '{\"3e:b0\":{\"type\":\"key\",\"key\":\"W\",\"modifiers\":[],\"mode\":\"hold\"}}'"
+adb shell "python3 - <<'PY'
+import json
+p = '/home/arduino/ArduinoApps/<slug>/python/config.json'
+c = json.load(open(p))
+c['keymap']['3e:b0'] = {'type': 'key', 'key': 'W', 'modifiers': [], 'mode': 'hold'}
+json.dump(c, open(p, 'w'), indent=2)
+PY
+arduino-app-cli app restart user:<slug>"
 ```
 
-`3e:b0`/`3e:b1`/`3e:b2` are buttons A/B/C; `key` takes A–Z, SPACE, ENTER and arrow
-names; `mode` is `hold` (key down while pressed) or `tap`. The remap persists in the
-app's `python/config.json` and survives normal redeploys; a `SUMMER_NO_BRIDGE=1`
-deploy discards it. No Modulinos attached = nothing happens, keyboard still works.
+`3e:b0`/`3e:b1`/`3e:b2` are buttons A/B/C; `key` takes A-Z, SPACE, ENTER and arrow
+names; `mode` is `hold` (key down while pressed) or `tap`. The config loads at app
+start, persists, and survives normal redeploys; a `SUMMER_NO_BRIDGE=1` deploy
+discards it. No Modulinos attached = nothing happens, keyboard still works.
 
 Troubleshooting: `systemctl status summer-hid-injector` on the board;
-`POST http://localhost:7000/api/nudge` moves the mouse if the chain is alive.
+a live injector moves the pointer on a UDP packet to 127.0.0.1:5555 (the sketch
+sends these; send one yourself to prove the injector end of the chain).
 If a sketch build ever blocks a deploy, re-run install-game.sh with
 `SUMMER_NO_BRIDGE=1` for a sketch-less install:
 `adb shell "SUMMER_NO_BRIDGE=1 bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"`
