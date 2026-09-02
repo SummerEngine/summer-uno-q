@@ -246,9 +246,9 @@ hides the pointer on this board (verified — exclusive fullscreen still shows i
 Design inside this budget — one stick, three buttons — and the same game plays
 naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
 (left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
-near WASD: action keys must never collide with movement keys. Nobody remaps anything
-in a browser; if a binding truly can't match, the deploy skill (`SKILL.md`, "Modulino
-input") has a one-command remap.
+near WASD: action keys must never collide with movement keys. Control changes go through the
+agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
+deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
 Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
 rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
@@ -352,7 +352,7 @@ from what they tell you, don't assume one.
 |---|---|---|
 | `SKILL.md` | agent | ship-to-unoq: inputs, prerequisites, commands, troubleshooting |
 | `board/setup-board.sh` | board | One-time fresh-board provisioning (idempotent) |
-| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick, the `arduino:web_ui` brick, and the bridge files → start |
+| `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick and the bridge files → start |
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
 | `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |
