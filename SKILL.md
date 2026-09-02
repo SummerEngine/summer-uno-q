@@ -316,11 +316,9 @@ sentences, not a report.
 - Don't tell them to open App Lab, browse My Apps, or press Run to start it — the game is
   already running.
 - **If you drove the game yourself to verify it** (injected input, played it, crashed it),
-  shut it down when you're done: `adb shell "arduino-app-cli app stop user:<slug>"`.
-  Never leave your test session running on the board. Then your final message offers the
-  start instead of claiming it: "Deployed and tested ☀️ — say go and I'll start it for
-  you to play, or tell me what you want changed." (Starting it back up is
-  `adb shell "arduino-app-cli app start user:<slug>"` — seconds, no rebuild.)
+  leave it running but not in your test wreckage: restart it fresh before your final
+  message — `adb shell "arduino-app-cli app restart user:<slug>"`, seconds, no rebuild —
+  so the player walks up to a title screen on their display, not your crashed run.
 - Then say how to redeploy after edits: same command, same name, updates in place.
 
 ## Tone
