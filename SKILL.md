@@ -131,8 +131,12 @@ path, not an error:
    The part before `.custom_build` is the **version folder** (`4.7.2.stable.mono`);
    the part after it is the **build hash**.
 2. List `https://api.github.com/repos/SummerEngine/summer-builds/releases/tags/templates`
-   and find the asset `summer-linux-templates-<full-hash>.tpz` whose full hash starts
-   with the build hash. Download it (~115 MB, no auth — the repo is public).
+   and pick the `.tpz` asset that matches your build — assets are named either by
+   version config (`summer-linux-templates-<version folder>.tpz`, e.g.
+   `...-4.7.2.stable.mono.tpz`) or by engine commit
+   (`summer-linux-templates-<full-hash>.tpz`, where the full hash starts with your
+   build hash). Prefer the version-config name when both exist. Download it
+   (~115 MB, no auth — the repo is public).
 3. A `.tpz` is a zip with everything under a `templates/` folder. Extract it and move
    the **contents** of `templates/` (not the folder itself) into:
    - Windows: `%APPDATA%\Godot\export_templates\<version folder>\`
