@@ -183,6 +183,11 @@ mkdir -p "$APPS"
 rm -rf "$APP"
 mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename
 
+# Boot straight into this game: the app-cli daemon starts whatever app path sits in
+# default.app (orchestrator.go). Handhelds at the jam have no keyboard or mouse to
+# press Run with — last deployed game wins the boot slot.
+echo "$APP" > /var/lib/arduino-app-cli/default.app
+
 echo ">> installed $APP — starting..."
 arduino-app-cli app start "user:$SLUG"
 

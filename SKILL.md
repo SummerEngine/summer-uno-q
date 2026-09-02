@@ -227,6 +227,10 @@ the bridge sketch — expect **~5 minutes** with no output during the build; it 
 hung. Updating an existing game is the same command with the same name and takes
 ~30 seconds. On failure the installer prints the app logs — read them before retrying.
 
+Every deploy also makes the game the **boot app**: power-cycling the board starts it
+automatically, no App Lab, no keyboard, no mouse. The last deployed game owns the
+boot slot.
+
 **Push the exact zip you just exported — never glob for it.** A project that has been
 exported before can hold several arm64 zips in `build/` under different names; picking
 one with a wildcard silently ships a build from days ago that looks entirely correct.
@@ -340,6 +344,7 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |
 | `unauthorized` in adb | Accept the prompt on the board's screen if attached, or replug |
+| Pressing Run in App Lab opens a web page over the game | That's the bridge's config UI taking focus — click the game window. Only happens on a dev setup with monitor+mouse; jam handhelds boot straight into the game |
 | Disk full errors | See setup script's cleanup hint (removes re-downloadable stock images) |
 
 ## Notes
