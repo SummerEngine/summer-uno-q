@@ -104,6 +104,26 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 ```
 
+And under `[display]`:
+
+```ini
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=540
+window/stretch/mode="viewport"
+```
+
+**The design resolution IS the render resolution — cap it at 960x540.** Games launch
+fullscreen, and with `stretch/mode="viewport"` the game renders at the design size and
+scales to whatever screen is attached, so the frame cost never depends on the monitor.
+Any other configuration renders at screen resolution: this board manages roughly 38 fps
+pushing a 2D canvas at 1080p and 60+ at 960x540 — and while the jam's handheld screen
+is small, the same game plugged into a TV afterwards must not fall off a cliff.
+Pixel-art games should go lower still (480x270), or keep 960x540 and render the world
+through a `SubViewportContainer` with `stretch_shrink=2` for fat pixels under a
+crisp HUD.
+
 `gl_compatibility` is not a downgrade to fix later — it is the configuration verified to
 run on this board, and the one the export presets and templates are built around.
 `import_etc2_astc` makes texture imports produce the mobile-compressed format the board

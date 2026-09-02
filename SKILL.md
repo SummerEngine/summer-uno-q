@@ -71,6 +71,16 @@ confirm, under `[rendering]`:
   setting you would think to check looks correct. If the user has the editor open, they
   can reimport there instead; either way confirm it happened before exporting.
 
+Also confirm, under `[display]`: `window/stretch/mode="viewport"` and
+`window/size/viewport_width` no larger than 960. Anything else renders at screen
+resolution — ~38 fps at 1080p on this board vs 60+ at 960x540. If the settings are
+missing or larger, stop and fix them with the user (repo README, Step 3): it is a
+two-line change plus a look at the game in the editor, and shipping without it means
+"the game is slow on the board" reports that are really a resolution bug. The one
+exception: the user explicitly choosing a different resolution — their call, ship it;
+just make sure they said it, rather than a template or a default having said it for
+them.
+
 **2. Find the arm64 preset.** Read `export_presets.cfg` and find the preset whose
 options include `binary_format/architecture="arm64"`. Use its `name=` value verbatim —
 do not assume it is called "Linux arm64 (Uno Q)", teams rename things. That preset
