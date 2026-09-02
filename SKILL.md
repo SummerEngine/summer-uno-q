@@ -238,13 +238,14 @@ controls arrive as ordinary keyboard events — bind these in the game:
 
 | Physical | Key |
 |---|---|
-| Joystick (d-pad mode) | Arrow keys |
+| Joystick (d-pad mode) | W / A / S / D |
 | Button A / B / C | J / K / L |
 
-**Build the game to this map and no remapping is ever needed** — movement on arrow
-keys (that one is fixed in the bridge, not remappable), actions on J / K / L (set by
-the installer; deliberately far from WASD so PC play never collides with movement).
-The user never opens a config page; keymapping is your job, not theirs.
+**Build the game to this map and no remapping is ever needed** — movement on
+W/A/S/D (fixed — the installer patches the bridge's d-pad to WASD at assembly),
+actions on J / K / L (also set by the installer; deliberately away from WASD so the
+two hands never collide). The user never opens a config page; keymapping is your
+job, not theirs.
 
 If the game's bindings genuinely can't match the map (an existing project, a key the
 design demands), remap the buttons yourself while the game app runs — one command,

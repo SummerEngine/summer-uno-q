@@ -58,7 +58,7 @@ about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", 
 high-score thing", "a little racer".
 
 **The controller is decided before the game is: a 4-way stick and three buttons.**
-That is the entire input surface — movement on arrows/WASD, actions on J, K, L (the
+That is the entire input surface — movement on W/A/S/D, actions on J, K, L (the
 exact bindings are in Step 5). Every mechanic, menu, and interaction must be playable
 with those seven keys and nothing else: no mouse, no text entry, no fourth button.
 Treat it the way a Game Boy dev treated the d-pad and A/B — a creative constraint to
@@ -185,15 +185,18 @@ window/stretch/aspect="keep"
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
 game over, level select: all of it must work with the keyboard alone. A mouse-only
 "Play" button is a game nobody can start. In practice: `grab_focus()` the first button
-of every menu when it appears, set focus neighbors so arrows move between controls,
-and walk every screen start-to-finish with only the keyboard before calling it done.
+of every menu when it appears, set focus neighbors, and **add W/A/S/D to the built-in
+`ui_up`/`ui_down`/`ui_left`/`ui_right` actions and J to `ui_accept`** (Project Settings
+> Input Map) — the handheld's stick sends WASD, and Godot's menu focus listens to the
+`ui_*` actions, not raw keys. Walk every screen start-to-finish with only WASD + J
+before calling it done.
 
 **Bind exactly the handheld's keys — this is the controller, decided before the first
 line of gameplay code:**
 
 | Physical control | Key the game must bind |
 |---|---|
-| Joystick (4-way) | Arrow keys — fixed, not remappable. Bind **WASD too**, as aliases of the same actions |
+| Joystick (4-way) | **W / A / S / D** — fixed, not remappable. Bind arrow keys too, as aliases of the same actions |
 | Button A | J |
 | Button B | K |
 | Button C | L |
