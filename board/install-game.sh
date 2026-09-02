@@ -100,16 +100,25 @@ EOF
     cp -rp "$BRIDGE/python" "$T/app/python"
     cp -rp "$BRIDGE/sketch" "$T/app/sketch"
     cp -rp "$BRIDGE/ui" "$T/app/ui"
-    # Our default button map is J/K/L, not the bridge's shipped A/S/ENTER — A and S
-    # collide with WASD movement on a PC keyboard. Patched in the staged copy so the
-    # vendored bridge/ stays verbatim.
-    python3 - "$T/app/python/config.json" <<'PYEOF'
+    # Our defaults differ from the bridge's shipped ones — both patched in the STAGED
+    # copy so the vendored bridge/ stays verbatim:
+    #   buttons J/K/L (shipped A/S/ENTER collides with WASD movement on a PC keyboard)
+    #   d-pad W/A/S/D (shipped arrow keys; jam games move on WASD)
+    python3 - "$T/app/python/config.json" "$T/app/python/main.py" <<'PYEOF'
 import json, sys
-p = sys.argv[1]
-c = json.load(open(p))
+cfg, mainpy = sys.argv[1], sys.argv[2]
+c = json.load(open(cfg))
 for slot, key in (("3e:b0", "J"), ("3e:b1", "K"), ("3e:b2", "L")):
     c["keymap"][slot] = {"type": "key", "key": key, "modifiers": [], "mode": "hold"}
-json.dump(c, open(p, "w"), indent=2)
+json.dump(c, open(cfg, "w"), indent=2)
+
+s = open(mainpy, encoding="utf-8").read()
+n = 0
+for old, new in (('"UP"', '"W"'), ('"DOWN"', '"S"'), ('"LEFT"', '"A"'), ('"RIGHT"', '"D"')):
+    n += s.count(old)
+    s = s.replace(old, new)
+assert n == 24, f"d-pad token count changed upstream ({n} != 24) — re-check the patch"
+open(mainpy, "w", encoding="utf-8", newline="").write(s)
 PYEOF
     # A team's saved key map survives redeploys: keep the old app's config.json.
     if [ -f "$APP/python/config.json" ]; then
@@ -173,6 +182,11 @@ arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
 mkdir -p "$APPS"
 rm -rf "$APP"
 mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename
+
+# Boot straight into this game: the app-cli daemon starts whatever app path sits in
+# default.app (orchestrator.go). Handhelds at the jam have no keyboard or mouse to
+# press Run with — last deployed game wins the boot slot.
+echo "$APP" > /var/lib/arduino-app-cli/default.app
 
 echo ">> installed $APP — starting..."
 arduino-app-cli app start "user:$SLUG"
