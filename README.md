@@ -104,6 +104,12 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 ```
 
+Under `[application]`:
+
+```ini
+run/max_fps=60
+```
+
 And under `[display]`:
 
 ```ini
@@ -113,6 +119,10 @@ window/size/viewport_width=960
 window/size/viewport_height=540
 window/stretch/mode="viewport"
 ```
+
+`max_fps=60` is about pacing, not thrift: a game that oscillates between 60 and 98
+against a 60 Hz screen microstutters; locked at 60 it feels smoother than the higher
+average ever did.
 
 **The design resolution IS the render resolution — cap it at 960x540.** Games launch
 fullscreen, and with `stretch/mode="viewport"` the game renders at the design size and
