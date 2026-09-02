@@ -123,9 +123,28 @@ The user can keep Summer open on the same project while you do this — a headle
 export alongside a running editor is fine, and is in fact faster, since the import
 caches are warm.
 
-If the export fails for missing export templates, that is not something to work
-around: the engine fetches templates keyed to its own build and there is no fallback.
-Report it and get an organizer.
+**If the export fails for missing export templates, install them from the public
+`summer-builds` release** — the app does not ship Linux templates; this is the normal
+path, not an error:
+
+1. `"<engine>" --version` prints e.g. `4.7.2.stable.mono.custom_build.a8e5ca520`.
+   The part before `.custom_build` is the **version folder** (`4.7.2.stable.mono`);
+   the part after it is the **build hash**.
+2. List `https://api.github.com/repos/SummerEngine/summer-builds/releases/tags/templates`
+   and find the asset `summer-linux-templates-<full-hash>.tpz` whose full hash starts
+   with the build hash. Download it (~115 MB, no auth — the repo is public).
+3. A `.tpz` is a zip with everything under a `templates/` folder. Extract it and move
+   the **contents** of `templates/` (not the folder itself) into:
+   - Windows: `%APPDATA%\Godot\export_templates\<version folder>\`
+   - macOS: `~/Library/Application Support/Godot/export_templates/<version folder>/`
+   Create the version folder if it doesn't exist. Result:
+   `.../export_templates/4.7.2.stable.mono/linux_release.arm64` (plus its siblings).
+4. Re-run the export.
+
+If no asset matches the build hash, templates for this engine build have not been
+published — that IS an organizer problem: they must run the `summer_linux_templates`
+workflow in the engine repo for this commit. Don't work around it with a
+different-version tpz; templates are keyed to the exact build for a reason.
 
 ## Prerequisites (once per computer)
 
@@ -311,7 +330,7 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 |---|---|
 | `adb devices` empty | Charge-only cable, hub in the path, or board still booting — direct data cable, wait 60 s |
 | installer: "not arm64" | You exported with the wrong preset — re-read `export_presets.cfg` for the one with `architecture="arm64"` and export again |
-| export fails: no export template found | Engine build has no matching templates published; no fallback exists — get an organizer, don't work around it |
+| export fails: no export template found | Normal on a fresh install — download the matching tpz from summer-builds and install it (see Export, step "missing export templates"). Only if no asset matches the build hash: get an organizer |
 | installer: "runner image missing" | First-deploy setup was skipped — run the fresh-board flow |
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |
