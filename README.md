@@ -81,8 +81,10 @@ Once they've picked, run upstream's Step 5 with that template (or `empty`), then
 npx -y summer-engine@latest create <template> <name>
 ```
 
-- **Never default to `3d-basic`.** It scaffolds on Forward+, which this board does not run
-  games on. If they pick it anyway, apply Step 3 immediately, before anything else.
+- **`3d-basic` is fine to suggest for a 3D game, but it arrives unconfigured**: Forward+
+  renderer (which this board cannot run) and no `[display]` block at all. That is not a
+  reason to avoid it — Step 3 converts it in a minute — it is a reason Step 3 must run
+  before anything else goes in, including the 3D profile and the display block.
 - Run `brainstorm-game` after the project exists, to turn "a Game Boy-ish puzzler" into a
   scoped design in `.summer/GameSoul.md`. The rough shape picks the template; the skill
   works out the game.
@@ -220,17 +222,9 @@ is what it looks for, which is why it goes in at scaffold time.
 
 ### Step 5: Performance
 
-2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty of
-headroom — something like 960×540 or 640×360 buys a lot back:
-
-```ini
-[display]
-
-window/size/viewport_width=960
-window/size/viewport_height=540
-window/stretch/mode="viewport"
-window/stretch/aspect="keep"
-```
+2D games run well on this board, and light 3D is fine too — provided the `[display]` block
+from Step 3 is in place (960×540, `stretch/mode="viewport"`). Pixel-art games can go
+lower still; 640×360 buys a lot back.
 
 **Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
@@ -338,9 +332,9 @@ Lab app. Summer can stay open on the project while it exports — that's faster,
 conflict.
 
 - The **first** deploy also provisions the board — desktop autologin, screen-locker
-  removal, runner image install — and fetches the ~105 MB runner image. The provisioning
-  itself takes a moment; the download is whatever your connection is. Later deploys skip
-  all of it.
+  removal, the runner image, the Modulino input service and its offline kit. The ~105 MB
+  runner image downloads to the laptop first and is pushed over USB, so the board itself
+  needs no network. Later deploys skip all of it.
 - There is one sudo prompt the **user** types themselves, in their own terminal. On a
   factory-fresh board that prompt is *creating* the board password. Never ask them for it.
 - **Deploying is not the same as seeing it.** The game starts on the board whether or not
@@ -382,7 +376,7 @@ from what they tell you, don't assume one.
 | `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick and the bridge files → start |
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
-| `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |
+| `kit/` | maintainer | Offline provisioning artifacts, committed so a fresh clone is a complete kit — see Kit prep below |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
@@ -413,7 +407,7 @@ no network. Regenerate them only when the pinned versions change:
 - Multiple games coexist on one board; re-deploying the same name updates in place.
 - **Modulino controllers:** every deployed game gets input from attached Modulino
   buttons and a joystick for free, delivered as ordinary keyboard events — see
-  `SKILL.md`'s "Modulino input" section for the key map, the in-game remap UI, and
+  `SKILL.md`'s "Modulino input" section for the key map, how remaps work, and
   troubleshooting. The bridge is Arduino's, vendored verbatim in `board/bridge/`;
   see `board/bridge/ATTRIBUTION.md`.
 - Remove a game — the `docker rm` matters, `app stop` leaves the container behind and a

@@ -81,7 +81,8 @@ exception: the user explicitly choosing a different resolution — their call, s
 just make sure they said it, rather than a template or a default having said it for
 them.
 
-**If the project is 3D, apply the board profile.** A 2D game needs none of it. Godot's
+**If the project is 3D, confirm the board profile is present — add it if not.** A 2D game
+needs none of it. Godot's
 defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
 feature tag — so without these the board renders with a 4096 shadow map and soft shadow
 filtering on a phone-class GPU. Set them under `[rendering]`, then say so in one line —
@@ -426,7 +427,6 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |
 | `unauthorized` in adb | Accept the prompt on the board's screen if attached, or replug |
-| Pressing Run in App Lab opens a web page over the game | That's the bridge's config UI taking focus — click the game window. Only happens on a dev setup with monitor+mouse; jam handhelds boot straight into the game |
 | Disk full errors | See setup script's cleanup hint (removes re-downloadable stock images) |
 
 ## Notes
