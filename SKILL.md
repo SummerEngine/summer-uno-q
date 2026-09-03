@@ -82,11 +82,8 @@ just make sure they said it, rather than a template or a default having said it 
 them.
 
 **If the project is 3D, confirm the board profile is present — add it if not.** A 2D game
-needs none of it. Godot's
-defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
-feature tag — so without these the board renders with a 4096 shadow map and soft shadow
-filtering on a phone-class GPU. Set them under `[rendering]`, then say so in one line —
-no list of settings, just what you did and an invitation to try it:
+needs none of it. The reasoning behind each line, and what to tune when a 3D game is still
+slow, lives in the repo README (Step 3 and Step 5); this is the check:
 
 ```ini
 lights_and_shadows/directional_shadow/size=1024
@@ -96,43 +93,18 @@ scaling_3d/scale=0.7
 shading/overrides/force_vertex_shading=true
 ```
 
+If you had to add them, say so in one line — no list of settings, just what you did and
+an invitation to try it:
+
 > Tuned the 3D settings a bit so the game runs well on the Arduino. Give it a play
 > and let me know if you want anything changed.
 
-The shadow lines carry most of the win and cost only harder shadow edges — do not reach
-for `shadow_enabled=false` instead, which looks worse and gains less than shrinking the
-map. `scaling_3d` renders 3D at 70% while UI and text stay full resolution; prefer it
-over dropping `viewport_width` again, which softens the HUD too. `force_vertex_shading`
-gains the least and changes the look the most, so it is the first to drop if they
-dislike the lighting. `size=2048` is the engine's own `.mobile` default, worth offering
-if their shadows look coarse. And as with resolution, an attendee who picks their own
-values has made a decision: apply what they ask for.
-
-**Never enable `anti_aliasing/quality/msaa_3d`.** It is off by default, so this is a
-check rather than a change — but MSAA is catastrophic on this GPU rather than merely
-expensive.
-
-**Do not shortcut the profile by adding `mobile` to the preset's `custom_features`.**
-The engine does ship `.mobile` defaults for those shadow settings, but the tag also
-flips `OS.has_feature("mobile")` for game code, and a game that checks it switches to
-touchscreen controls on a handheld whose controls are physical buttons.
-
-**If a 3D project imports `.glb`/`.gltf` scenes AND has a shadow-casting Omni or
-SpotLight, set `meshes/create_shadow_meshes=false` on those imports.** Shadow-mesh
-surfaces carry no material of their own and the GLES3 renderer asks for one anyway, once
-per surface per shadow light per frame: the log floods with `ERROR: Parameter "material"
-is null` from `gles3/storage/material_storage.cpp` and the scene crawls. A directional
-light alone never triggers it.
-
-**Texture import is a transfer-size and load-time fix, not a frame-rate fix.**
-`compress/mode=2`, `mipmaps/generate=true` and `process/size_limit=1024` cut the zip and
-the board's memory use substantially, and buy no frames. Do not reach for them when the
-complaint is frame rate.
-
-**What the profile cannot fix.** It addresses fill rate and shading. A game bound by
-draw calls, transparent overdraw or per-frame GDScript is untouched by it, and no
-further settings pass will change that — what is left is content work: fewer draw calls,
-fewer particles, cheaper generation. Say so plainly instead.
+Two more checks while you are in there: `anti_aliasing/quality/msaa_3d` must be off (it is
+by default — MSAA is catastrophic on this GPU, not merely expensive), and the preset's
+`custom_features` must not contain `mobile` (the tag flips `OS.has_feature("mobile")`, and
+a game that checks it switches to touchscreen controls on a handheld with physical
+buttons). As with resolution, an attendee who chose their own values has made a decision:
+ship what they ask for.
 
 **2. Find the arm64 preset.** Read `export_presets.cfg` and find the preset whose
 options include `binary_format/architecture="arm64"`. Use its `name=` value verbatim —

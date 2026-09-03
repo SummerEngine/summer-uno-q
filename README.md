@@ -269,6 +269,26 @@ Games launch **fullscreen** on the board. `stretch/mode="viewport"` keeps the ga
 rendering at its design size and scales up for almost nothing, so the frame cost never
 depends on the attached monitor.
 
+**Tuning the 3D profile.** The shadow lines carry most of the win and cost only harder
+shadow edges — don't reach for `shadow_enabled=false` instead, which looks worse and gains
+less than shrinking the map. `scaling_3d` renders the 3D scene at 70% while UI and text stay
+full resolution; prefer it over dropping the design resolution again, which softens the HUD
+too. `force_vertex_shading` gains the least and changes the look the most, so it is the
+first to drop if the lighting reads wrong. `size=2048` is the engine's own mobile default,
+worth offering if shadows look coarse.
+
+**`.glb`/`.gltf` scenes plus a shadow-casting Omni or SpotLight need
+`meshes/create_shadow_meshes=false` on those imports.** Shadow-mesh surfaces carry no
+material of their own and the GLES3 renderer asks for one anyway, once per surface per
+shadow light per frame: the log floods with `ERROR: Parameter "material" is null` from
+`gles3/storage/material_storage.cpp` and the scene crawls. A directional light alone never
+triggers it.
+
+**Texture import settings are a transfer-size and load-time fix, not a frame-rate fix.**
+`compress/mode=2`, `mipmaps/generate=true` and `process/size_limit=1024` cut the zip and the
+board's memory use substantially and buy no frames — don't reach for them when the
+complaint is frame rate.
+
 If a 3D game still drops frames after Step 3's profile, work out which kind of slow it is
 before touching settings again. The profile fixes fill rate and shading; it does nothing for
 draw calls, transparent overdraw or per-frame GDScript. A scene drawing thousands of small
