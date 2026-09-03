@@ -104,6 +104,27 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 ```
 
+**A 3D game needs five more lines in that same block.** Skip them entirely for 2D:
+
+```ini
+lights_and_shadows/directional_shadow/size=1024
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
+scaling_3d/mode=0
+scaling_3d/scale=0.7
+shading/overrides/force_vertex_shading=true
+```
+
+Godot's defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
+feature tag — so without these the board renders with a 4096 shadow map and soft filtering on
+a phone-class GPU. The shadow lines carry most of the win and cost only harder edges;
+`scaling_3d` renders 3D at 70% while UI and text stay sharp, which beats dropping the design
+resolution again; `force_vertex_shading` changes how lighting reads, so it's the first to drop
+if you don't like it. `2048` is the engine's own mobile default if shadows look coarse.
+**Never enable `msaa_3d`** — it is catastrophic on this GPU. And don't try to inherit the
+engine's `.mobile` values by putting `mobile` in the preset's `custom_features`: that tag also
+flips `OS.has_feature("mobile")`, and a game that checks it switches to touchscreen controls
+on a handheld with physical buttons.
+
 Under `[application]`:
 
 ```ini
@@ -207,7 +228,7 @@ headroom — something like 960×540 or 640×360 buys a lot back:
 
 window/size/viewport_width=960
 window/size/viewport_height=540
-window/stretch/mode="canvas_items"
+window/stretch/mode="viewport"
 window/stretch/aspect="keep"
 ```
 
@@ -250,10 +271,16 @@ near WASD: action keys must never collide with movement keys. Control changes go
 agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
 deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
-Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
-rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
-`window/stretch/mode="viewport"`: the game keeps rendering at 960x540 and scales up for
-almost nothing.
+Games launch **fullscreen** on the board. `stretch/mode="viewport"` keeps the game
+rendering at its design size and scales up for almost nothing, so the frame cost never
+depends on the attached monitor.
+
+If a 3D game still drops frames after Step 3's profile, work out which kind of slow it is
+before touching settings again. The profile fixes fill rate and shading; it does nothing for
+draw calls, transparent overdraw or per-frame GDScript. A scene drawing thousands of small
+meshes — one draw call each — sits in single digits while barely using the CPU, and no setting
+moves it. That needs fewer draw calls, fewer particles and cheaper generation, not another
+settings pass.
 
 If frames drop, measure before optimising — `tune-performance`.
 
