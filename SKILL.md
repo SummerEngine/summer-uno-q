@@ -263,7 +263,9 @@ adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Ga
 Success is a line starting `OK:`. The first deploy of a game compiles and flashes
 the bridge sketch — expect **~5 minutes** with no output during the build; it is not
 hung. Updating an existing game is the same command with the same name and takes
-~30 seconds. On failure the installer prints the app logs — read them before retrying.
+~30 seconds. A **3D** game then sits on the Summer splash for another 60–100 s on its
+first launch while GLES shaders compile — also not hung; later launches are quick.
+On failure the installer prints the app logs — read them before retrying.
 
 Every deploy also makes the game the **boot app**: power-cycling the board starts it
 automatically, no App Lab, no keyboard, no mouse. The last deployed game owns the
