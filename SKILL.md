@@ -395,6 +395,7 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 | `adb devices` empty | Charge-only cable, hub in the path, or board still booting — direct data cable, wait 60 s |
 | installer: "not arm64" | You exported with the wrong preset — re-read `export_presets.cfg` for the one with `architecture="arm64"` and export again |
 | export fails: no export template found | Normal on a fresh install — download the matching tpz from summer-builds and install it (see Export, step "missing export templates"). Only if no asset matches the build hash: get an organizer |
+| installer: `[ERROR] App "<other>" Is Running` | Another game was up when this one tried to start (App Lab runs one app at a time). The installer stops other running apps itself; seeing this means an old installer copy — re-push `board/install-game.sh` and run it again |
 | installer: "runner image missing" | First-deploy setup was skipped — run the fresh-board flow |
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |
