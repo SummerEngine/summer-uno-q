@@ -178,6 +178,12 @@ fi
 
 # --- Install & start ---------------------------------------------------------
 arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
+# App Lab runs ONE app at a time, and `app start` fails outright if another is up. A
+# handheld shows one game anyway, so stop whatever else is running rather than fail
+# after the folder has already been replaced.
+for RUNNING in $(arduino-app-cli app list 2>/dev/null | awk '$1 ~ /^user:/ && $(NF-1) == "running" {print $1}'); do
+    [ "$RUNNING" = "user:$SLUG" ] || arduino-app-cli app stop "$RUNNING" >/dev/null 2>&1 || true
+done
 mkdir -p "$APPS"
 rm -rf "$APP"
 mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename

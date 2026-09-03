@@ -81,10 +81,38 @@ exception: the user explicitly choosing a different resolution — their call, s
 just make sure they said it, rather than a template or a default having said it for
 them.
 
+**If the project is 3D, confirm the board profile is present — add it if not.** A 2D game
+needs none of it. The reasoning behind each line, and what to tune when a 3D game is still
+slow, lives in the repo README (Step 3 and Step 5); this is the check:
+
+```ini
+lights_and_shadows/directional_shadow/size=1024
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
+scaling_3d/mode=0
+scaling_3d/scale=0.7
+shading/overrides/force_vertex_shading=true
+```
+
+If you had to add them, say so in one line — no list of settings, just what you did and
+an invitation to try it:
+
+> Tuned the 3D settings a bit so the game runs well on the Arduino. Give it a play
+> and let me know if you want anything changed.
+
+Two more checks while you are in there: `anti_aliasing/quality/msaa_3d` must be off (it is
+by default — MSAA is catastrophic on this GPU, not merely expensive), and the preset's
+`custom_features` must not contain `mobile` (the tag flips `OS.has_feature("mobile")`, and
+a game that checks it switches to touchscreen controls on a handheld with physical
+buttons). As with resolution, an attendee who chose their own values has made a decision:
+ship what they ask for.
+
 **2. Find the arm64 preset.** Read `export_presets.cfg` and find the preset whose
 options include `binary_format/architecture="arm64"`. Use its `name=` value verbatim —
 do not assume it is called "Linux arm64 (Uno Q)", teams rename things. That preset
-must also have `texture_format/etc2_astc=true` and `texture_format/s3tc_bptc=false`.
+must also have `texture_format/etc2_astc=true`, `texture_format/s3tc_bptc=false` and
+`binary_format/embed_pck=false`. The installer needs the `.pck` as a separate file beside
+the binary and refuses an embedded one — and that refusal lands on the board, after an
+export that looked entirely successful.
 
 If there is no arm64 preset, the project was not set up for the board. Point the user
 at the repo README's "Add the export preset" step rather than authoring one here —
@@ -235,7 +263,9 @@ adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Ga
 Success is a line starting `OK:`. The first deploy of a game compiles and flashes
 the bridge sketch — expect **~5 minutes** with no output during the build; it is not
 hung. Updating an existing game is the same command with the same name and takes
-~30 seconds. On failure the installer prints the app logs — read them before retrying.
+~30 seconds. A **3D** game then sits on the Summer splash for another 60–100 s on its
+first launch while GLES shaders compile — also not hung; later launches are quick.
+On failure the installer prints the app logs — read them before retrying.
 
 Every deploy also makes the game the **boot app**: power-cycling the board starts it
 automatically, no App Lab, no keyboard, no mouse. The last deployed game owns the
@@ -367,11 +397,11 @@ legible — a sunny tone never means a vague one, and never means a longer one.
 | `adb devices` empty | Charge-only cable, hub in the path, or board still booting — direct data cable, wait 60 s |
 | installer: "not arm64" | You exported with the wrong preset — re-read `export_presets.cfg` for the one with `architecture="arm64"` and export again |
 | export fails: no export template found | Normal on a fresh install — download the matching tpz from summer-builds and install it (see Export, step "missing export templates"). Only if no asset matches the build hash: get an organizer |
+| installer: `[ERROR] App "<other>" Is Running` | Another game was up when this one tried to start (App Lab runs one app at a time). The installer stops other running apps itself; seeing this means an old installer copy — re-push `board/install-game.sh` and run it again |
 | installer: "runner image missing" | First-deploy setup was skipped — run the fresh-board flow |
 | App starts then black/frozen game, 0% CPU | Board not set up (screen locker) — run setup-board.sh |
 | Game runs but textures broken/pink | Preset missing `etc2_astc=true` or project not on Compatibility renderer — fix and re-export |
 | `unauthorized` in adb | Accept the prompt on the board's screen if attached, or replug |
-| Pressing Run in App Lab opens a web page over the game | That's the bridge's config UI taking focus — click the game window. Only happens on a dev setup with monitor+mouse; jam handhelds boot straight into the game |
 | Disk full errors | See setup script's cleanup hint (removes re-downloadable stock images) |
 
 ## Notes

@@ -81,8 +81,10 @@ Once they've picked, run upstream's Step 5 with that template (or `empty`), then
 npx -y summer-engine@latest create <template> <name>
 ```
 
-- **Never default to `3d-basic`.** It scaffolds on Forward+, which this board does not run
-  games on. If they pick it anyway, apply Step 3 immediately, before anything else.
+- **`3d-basic` is fine to suggest for a 3D game, but it arrives unconfigured**: Forward+
+  renderer (which this board cannot run) and no `[display]` block at all. That is not a
+  reason to avoid it — Step 3 converts it in a minute — it is a reason Step 3 must run
+  before anything else goes in, including the 3D profile and the display block.
 - Run `brainstorm-game` after the project exists, to turn "a Game Boy-ish puzzler" into a
   scoped design in `.summer/GameSoul.md`. The rough shape picks the template; the skill
   works out the game.
@@ -103,6 +105,27 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 ```
+
+**A 3D game needs five more lines in that same block.** Skip them entirely for 2D:
+
+```ini
+lights_and_shadows/directional_shadow/size=1024
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
+scaling_3d/mode=0
+scaling_3d/scale=0.7
+shading/overrides/force_vertex_shading=true
+```
+
+Godot's defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
+feature tag — so without these the board renders with a 4096 shadow map and soft filtering on
+a phone-class GPU. The shadow lines carry most of the win and cost only harder edges;
+`scaling_3d` renders 3D at 70% while UI and text stay sharp, which beats dropping the design
+resolution again; `force_vertex_shading` changes how lighting reads, so it's the first to drop
+if you don't like it. `2048` is the engine's own mobile default if shadows look coarse.
+**Never enable `msaa_3d`** — it is catastrophic on this GPU. And don't try to inherit the
+engine's `.mobile` values by putting `mobile` in the preset's `custom_features`: that tag also
+flips `OS.has_feature("mobile")`, and a game that checks it switches to touchscreen controls
+on a handheld with physical buttons.
 
 Under `[application]`:
 
@@ -199,17 +222,9 @@ is what it looks for, which is why it goes in at scaffold time.
 
 ### Step 5: Performance
 
-2D games run well on this board, and light 3D is fine too. Lower resolutions give plenty of
-headroom — something like 960×540 or 640×360 buys a lot back:
-
-```ini
-[display]
-
-window/size/viewport_width=960
-window/size/viewport_height=540
-window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-```
+2D games run well on this board, and light 3D is fine too — provided the `[display]` block
+from Step 3 is in place (960×540, `stretch/mode="viewport"`). Pixel-art games can go
+lower still; 640×360 buys a lot back.
 
 **Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
@@ -250,10 +265,36 @@ near WASD: action keys must never collide with movement keys. Control changes go
 agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
 deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
-Games launch **fullscreen** on the board. With `stretch/mode="canvas_items"` that means
-rendering at the monitor's full resolution — if frames drop on a 1080p screen, switch to
-`window/stretch/mode="viewport"`: the game keeps rendering at 960x540 and scales up for
-almost nothing.
+Games launch **fullscreen** on the board. `stretch/mode="viewport"` keeps the game
+rendering at its design size and scales up for almost nothing, so the frame cost never
+depends on the attached monitor.
+
+**Tuning the 3D profile.** The shadow lines carry most of the win and cost only harder
+shadow edges — don't reach for `shadow_enabled=false` instead, which looks worse and gains
+less than shrinking the map. `scaling_3d` renders the 3D scene at 70% while UI and text stay
+full resolution; prefer it over dropping the design resolution again, which softens the HUD
+too. `force_vertex_shading` gains the least and changes the look the most, so it is the
+first to drop if the lighting reads wrong. `size=2048` is the engine's own mobile default,
+worth offering if shadows look coarse.
+
+**`.glb`/`.gltf` scenes plus a shadow-casting Omni or SpotLight need
+`meshes/create_shadow_meshes=false` on those imports.** Shadow-mesh surfaces carry no
+material of their own and the GLES3 renderer asks for one anyway, once per surface per
+shadow light per frame: the log floods with `ERROR: Parameter "material" is null` from
+`gles3/storage/material_storage.cpp` and the scene crawls. A directional light alone never
+triggers it.
+
+**Texture import settings are a transfer-size and load-time fix, not a frame-rate fix.**
+`compress/mode=2`, `mipmaps/generate=true` and `process/size_limit=1024` cut the zip and the
+board's memory use substantially and buy no frames — don't reach for them when the
+complaint is frame rate.
+
+If a 3D game still drops frames after Step 3's profile, work out which kind of slow it is
+before touching settings again. The profile fixes fill rate and shading; it does nothing for
+draw calls, transparent overdraw or per-frame GDScript. A scene drawing thousands of small
+meshes — one draw call each — sits in single digits while barely using the CPU, and no setting
+moves it. That needs fewer draw calls, fewer particles and cheaper generation, not another
+settings pass.
 
 If frames drop, measure before optimising — `tune-performance`.
 
@@ -311,9 +352,9 @@ Lab app. Summer can stay open on the project while it exports — that's faster,
 conflict.
 
 - The **first** deploy also provisions the board — desktop autologin, screen-locker
-  removal, runner image install — and fetches the ~105 MB runner image. The provisioning
-  itself takes a moment; the download is whatever your connection is. Later deploys skip
-  all of it.
+  removal, the runner image, the Modulino input service and its offline kit. The ~105 MB
+  runner image downloads to the laptop first and is pushed over USB, so the board itself
+  needs no network. Later deploys skip all of it.
 - There is one sudo prompt the **user** types themselves, in their own terminal. On a
   factory-fresh board that prompt is *creating* the board password. Never ask them for it.
 - **Deploying is not the same as seeing it.** The game starts on the board whether or not
@@ -355,7 +396,7 @@ from what they tell you, don't assume one.
 | `board/install-game.sh` | board | Zip → App Lab app assembled from the `game_runner` brick and the bridge files → start |
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
-| `kit/` | maintainer | Offline provisioning artifacts, gitignored — see Kit prep below |
+| `kit/` | maintainer | Offline provisioning artifacts, committed so a fresh clone is a complete kit — see Kit prep below |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
@@ -386,7 +427,7 @@ no network. Regenerate them only when the pinned versions change:
 - Multiple games coexist on one board; re-deploying the same name updates in place.
 - **Modulino controllers:** every deployed game gets input from attached Modulino
   buttons and a joystick for free, delivered as ordinary keyboard events — see
-  `SKILL.md`'s "Modulino input" section for the key map, the in-game remap UI, and
+  `SKILL.md`'s "Modulino input" section for the key map, how remaps work, and
   troubleshooting. The bridge is Arduino's, vendored verbatim in `board/bridge/`;
   see `board/bridge/ATTRIBUTION.md`.
 - Remove a game — the `docker rm` matters, `app stop` leaves the container behind and a
