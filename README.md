@@ -3,6 +3,9 @@
 Everything an AI coding agent needs to build a game for the **Arduino Uno Q** with Summer
 Engine and get it running on the board.
 
+Built for the AI Game Console Hackathon, and just as useful for anyone making a game for
+their own Uno Q.
+
 The Uno Q's Linux half (Qualcomm QRB2210, Adreno 702 mobile GPU) is what runs the game, so
 "export for Arduino" means **Linux arm64**. This repo carries the settings that make that
 work, plus the skill that puts the finished game on the board as an Arduino App Lab app.
