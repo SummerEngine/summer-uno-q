@@ -246,6 +246,20 @@ line of gameplay code:**
 | Button B | K |
 | Button C | L |
 
+**In-game text names the handheld's controls, never the keys.** J/K/L and W/A/S/D are the
+wires under the floor; the player is looking at a stick and three buttons printed **A**,
+**B**, **C**. Every tutorial line, HUD hint, button prompt and menu label that mentions a
+control says it the way the player sees it:
+
+| Write this | Not this |
+|---|---|
+| "Press **A** to jump" | "Press J to jump" |
+| "**B** swings, **C** pauses" | "K swings, L pauses" |
+| "Move with the **stick**" | "Move with WASD" / "arrow keys" |
+
+Same rule for the game's own "Controls" screen if it has one. A game may *also* mention
+the keyboard for people playing it on a laptop later, but the pad names come first.
+
 **Hide the mouse pointer in code** — one line in any autoload's `_ready()`:
 
 ```gdscript
