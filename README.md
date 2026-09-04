@@ -60,11 +60,13 @@ Ask before you scaffold. One question, plain language: *what kind of game are yo
 about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", "an arcade
 high-score thing", "a little racer".
 
-**The controller is decided before the game is: a 4-way stick and three buttons.**
-That is the entire input surface — movement on W/A/S/D, actions on J, K, L (the
-exact bindings are in Step 5). Every mechanic, menu, and interaction must be playable
-with those seven keys and nothing else: no mouse, no text entry, no fourth button.
-Treat it the way a Game Boy dev treated the d-pad and A/B — a creative constraint to
+**The controller is decided before the game is: a joystick and three buttons, printed
+A, B and C.** That is the entire input surface. Every mechanic, menu, and interaction must
+be playable with those four controls and nothing else: no mouse, no text entry, no fourth
+button. The controls reach the game as keystrokes and Step 5 has the exact bindings, but
+those key names are plumbing — **call them the joystick and buttons A/B/C whenever you
+speak to the person, from this question onward.**
+Treat it the way a Game Boy dev treated four directions and two buttons — a creative constraint to
 design *into* from the first idea, not a port target for later. If a proposed mechanic
 needs more inputs, reshape the mechanic now; carry this constraint into
 `brainstorm-game` so the design never drifts off the pad.
@@ -235,7 +237,7 @@ game over, level select: all of it must work with the keyboard alone. A mouse-on
 "Play" button is a game nobody can start. In practice: `grab_focus()` the first button
 of every menu when it appears, set focus neighbors, and **add W/A/S/D to the built-in
 `ui_up`/`ui_down`/`ui_left`/`ui_right` actions and J to `ui_accept`** (Project Settings
-> Input Map) — the handheld's stick sends WASD, and Godot's menu focus listens to the
+> Input Map) — the handheld's joystick sends WASD, and Godot's menu focus listens to the
 `ui_*` actions, not raw keys. Walk every screen start-to-finish with only WASD + J
 before calling it done.
 
@@ -244,24 +246,26 @@ line of gameplay code:**
 
 | Physical control | Key the game must bind |
 |---|---|
-| Joystick (4-way) | **W / A / S / D** — fixed, not remappable. Bind arrow keys too, as aliases of the same actions |
+| Joystick | **W / A / S / D** — fixed, not remappable. Bind arrow keys too, as aliases of the same actions |
 | Button A | J |
 | Button B | K |
 | Button C | L |
 
-**In-game text names the handheld's controls, never the keys.** J/K/L and W/A/S/D are the
-wires under the floor; the player is looking at a stick and three buttons printed **A**,
-**B**, **C**. Every tutorial line, HUD hint, button prompt and menu label that mentions a
-control says it the way the player sees it:
+**Every word anyone reads names the handheld's controls, never the keys.** J/K/L and
+W/A/S/D are the wires under the floor; the person is holding a joystick and three buttons
+printed **A**, **B**, **C**. This covers your own messages while building, every tutorial
+line, HUD hint, button prompt and menu label, and the game's Controls screen — all of it
+says the control the way the player sees it:
 
 | Write this | Not this |
 |---|---|
 | "Press **A** to jump" | "Press J to jump" |
 | "**B** swings, **C** pauses" | "K swings, L pauses" |
-| "Move with the **stick**" | "Move with WASD" / "arrow keys" |
+| "Move with the **joystick**" | "Move with WASD" / "arrow keys" |
+| "the joystick and three buttons" | "a D-pad plus J/K/L" |
 
-Same rule for the game's own "Controls" screen if it has one. A game may *also* mention
-the keyboard for people playing it on a laptop later, but the pad names come first.
+A game may *also* mention the keyboard for people playing it on a laptop later, but the
+handheld's names come first.
 
 **Hide the mouse pointer in code** — one line in any autoload's `_ready()`:
 
@@ -275,8 +279,8 @@ It must be code: the `display/mouse_cursor/custom_image` project setting gets st
 from `project.godot` by the editor's settings pass on export, and no window/video mode
 hides the pointer on this board (verified — exclusive fullscreen still shows it).
 
-Design inside this budget — one stick, three buttons — and the same game plays
-naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
+Design inside this budget — one joystick, three buttons — and the same game plays
+naturally in both places: on the handheld (joystick + buttons) and on a PC keyboard
 (left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
 near WASD: action keys must never collide with movement keys. Control changes go through the
 agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the

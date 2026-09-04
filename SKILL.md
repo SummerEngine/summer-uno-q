@@ -282,11 +282,12 @@ controls arrive as ordinary keyboard events — bind these in the game:
 
 | Physical | Key |
 |---|---|
-| Joystick (d-pad mode) | W / A / S / D |
+| Joystick | W / A / S / D |
 | Button A / B / C | J / K / L |
 
 **Build the game to this map and no remapping is ever needed** — movement on
-W/A/S/D (fixed — the installer patches the bridge's d-pad to WASD at assembly),
+W/A/S/D (fixed — the installer patches the bridge's joystick output to WASD at
+assembly),
 actions on J / K / L (also set by the installer; deliberately away from WASD so the
 two hands never collide). The user never opens a config page; keymapping is your
 job, not theirs.
@@ -367,8 +368,8 @@ sentences, not a report.
   > Voxel Island is on the board ☀️ — joystick to move, **A** to jump, **B** to place a
   > block, **C** to pause. Go play, and tell me what you want changed.
 
-  Never tell them to press W/A/S/D or J/K/L: those are the keys the pad sends under the
-  hood, and nobody at the table has a keyboard. If a button is unused in this game, leave
+  Never tell them to press W/A/S/D or J/K/L, here or in any other message: those are the
+  keys the pad sends under the hood, and nobody holding the handheld has a keyboard. If a button is unused in this game, leave
   it out rather than listing it as idle. That's the whole message — no monitor/cable talk,
   no explanation of virtual displays, no `app logs` command, no App Lab click-through.
   Keep `app list` and `app logs` for when something actually failed.
