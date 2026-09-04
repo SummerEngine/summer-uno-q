@@ -96,6 +96,12 @@ npx -y summer-engine@latest create <template> <name>
 
 ### Step 3: Configure the project for the board
 
+**Steps 3 and 4 are not questions.** The person chose a game; they did not choose a renderer,
+a resolution or an export target, and asking them to is asking them to know the board.
+Apply everything in these two steps the moment the project exists, then tell them in one
+line what you did — "Set the project up for the Uno Q" is plenty. The only time a value here
+is up for discussion is when the person explicitly asks for a different one.
+
 Do this immediately after `create`, before anything of their own goes in. A template
 arrives with scenes and art already, which is exactly why this can't wait: both settings
 change how existing material imports and renders, so applying them later means re-checking
@@ -170,7 +176,8 @@ the editor.
 
 ### Step 4: Add the export preset
 
-Add this to the project's `export_presets.cfg`. These values are known-good — a game built
+Add this to the project's `export_presets.cfg` — again without asking; a game that cannot
+export for the board is not a game for the board. These values are known-good — a game built
 with exactly this preset runs on a real board.
 
 **Check for existing presets first.** Most templates already ship an `export_presets.cfg`
@@ -394,6 +401,12 @@ conflict.
 - **Don't improvise `adb`, `docker`, `apt`, or SSH repairs on the board.** Use the skill's
   scripts. An agent improvising on hardware can burn a team's whole day, and the damage
   shows up looking like a game bug.
+- **Don't ask permission for Steps 3 and 4.** "Shall I switch to 960×540 and add the arm64
+  preset?" hands the person a decision they have no basis to make. Apply, then mention.
+- **Don't report settings as results.** `max_fps=60` is a ceiling, not a frame rate;
+  `etc2_astc=true` is an import setting, not a texture that has been seen working;
+  "Uno Q-ready" is something only the board can say. Until it has run there, say what you
+  configured — "set to 960×540 with a 60 fps cap" — never what it achieves.
 - **Don't call the game done from the editor.** Play it on the board.
 
 ---
