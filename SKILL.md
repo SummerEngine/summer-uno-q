@@ -21,6 +21,33 @@ are the product.** The host-side export below is yours to run.
 (where this SKILL.md lives) — resolve it to an absolute path before running, since
 your working directory is the user's project.
 
+## Before anything: has the board had its own first-time setup?
+
+The Uno Q ships with its own out-of-box setup — board name, password, Wi-Fi — and it is
+the person's to do, not yours. It happens in **Arduino App Lab on their laptop**, with the
+board plugged in over USB-C. Nothing here works until it is done.
+
+**Check first, ask second.** If `adb shell test -f /home/arduino/.summer-hackathon-setup`
+says the marker exists, this board has already been through everything — skip straight to
+Deploy. Otherwise ask, with the list:
+
+> Before I can put anything on the board, it needs its own one-time setup — it takes a
+> couple of minutes in Arduino App Lab on your laptop ☀️
+>
+> 1. Install and open **Arduino App Lab**, then plug the board in over USB-C.
+> 2. Give the board a name and set a password — **remember the password**, you'll type it
+>    once more later.
+> 3. **Connect it to Wi-Fi.** Don't skip this step: a board with no Wi-Fi keeps showing its
+>    own setup prompt on screen, and that sits on top of your game.
+>
+> Say when it's done and I'll take it from there.
+
+Then wait. Do not push files, run setup, or start work in the meantime.
+
+If they say it's done but `adb shell hostname` still answers `uno-q` and
+`adb shell "ip -4 addr show wlan0"` shows no address, the wizard was not completed — say
+which of the two is missing rather than pressing on into a setup that will fail.
+
 ## Inputs to collect from the user
 
 1. **Path to the project** (the folder containing `project.godot`). **Always export it
@@ -238,7 +265,8 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    ```
    adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
    ```
-   On a factory-fresh board the sudo prompt asks them to CREATE the board password —
+   The prompt wants the board password they set in App Lab. (A board that somehow never
+   went through that wizard is asked to *create* one at this prompt instead.) Either way
    they type it themselves; never ask them to tell it to you.
 4. The script prints `Setup complete` when done; it is idempotent, so on any
    doubt have the user re-run it. If it reported the autologin step as already
@@ -343,7 +371,7 @@ sentences, not a report.
 
   > One step needs your terminal — it sets the board up for games, one time:
   > screen-lock off, autologin, the game runtime, and the controller-input service.
-  > It'll ask for the board's sudo password (a fresh board asks you to create one) ☀️
+  > It'll ask for the board password you set in App Lab ☀️
   >
   > ```
   > adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
