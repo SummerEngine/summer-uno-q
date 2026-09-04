@@ -369,8 +369,19 @@ names; `mode` is `hold` (key down while pressed) or `tap`. The config loads at a
 start, persists, and survives normal redeploys; a `SUMMER_NO_BRIDGE=1` deploy
 discards it. No Modulinos attached = nothing happens, keyboard still works.
 
-Troubleshooting: `systemctl status summer-hid-injector` on the board. To prove the
-injector end of the chain, send it the same UDP packet the sketch would; the pointer moves:
+The bridge firmware is flashed once per deploy, not on every boot. Every game start
+probes it and, if another App Lab app has flashed its own sketch over it, reflashes it
+(about 15 s, logged as `bridge check: bridge restored after N s`). To see the probe's
+verdict on the board: `docker logs <slug>-main-1 2>&1 | grep "bridge check"`. To test the
+repair, let Arduino's stock Blink example take the MCU, then start the game again:
+
+```
+adb shell "arduino-app-cli app stop user:<slug>; arduino-app-cli app start examples:blink; arduino-app-cli app stop examples:blink; arduino-app-cli app start user:<slug>"
+```
+
+Troubleshooting: `systemctl status summer-hid-injector summer-bridge-flash` on the board.
+To prove the injector end of the chain, send it the same UDP packet the sketch would; the
+pointer moves:
 
 ```
 adb shell "python3 -c \"import socket,json; socket.socket(socket.AF_INET,socket.SOCK_DGRAM).sendto(json.dumps({'type':'mouse_move','dx':50,'dy':50}).encode(),('127.0.0.1',5555))\""

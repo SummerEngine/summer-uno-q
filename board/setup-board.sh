@@ -113,9 +113,31 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 UNIT
+# Bridge reflash on request. The bridge firmware is persistent (install-game.sh flashes
+# it once per deploy), so a game's Python side probes the MCU at start and, when
+# another app's sketch has taken it over, drops .reflash-bridge in its app folder. This
+# service turns that flag into an upload of the prebuilt image — no compile. It runs as
+# arduino because that user owns the arduino-cli core and the build dir. A 2 s poll
+# rather than a systemd path unit: inotify on a glob only watches ArduinoApps/ itself
+# and never sees a file created inside an app folder (verified on the board).
+sudo tee /etc/systemd/system/summer-bridge-flash.service >/dev/null <<UNIT
+[Unit]
+Description=Reflash the persistent Summer Modulino bridge on request
+StartLimitIntervalSec=0
+
+[Service]
+User=arduino
+Environment=HOME=/home/arduino
+ExecStart=/bin/sh -c 'while sleep 2; do for f in /home/arduino/ArduinoApps/*/.reflash-bridge; do [ -e "\$f" ] || continue; rm -f "\$f"; echo "reflash requested by \$f"; arduino-cli upload --fqbn arduino:zephyr:unoq:wait_linux_boot=yes --input-dir /home/arduino/.summer/bridge-build /home/arduino/.summer/bridge/sketch && echo "reflash done"; done; done'
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+UNIT
 sudo systemctl daemon-reload
-sudo systemctl enable --now summer-hid-injector.service
-echo "5/5 HID injector service installed"
+sudo systemctl enable --now summer-hid-injector.service summer-bridge-flash.service
+echo "5/5 HID injector service and bridge reflash watcher installed"
 
 # Only claim completion if the board can actually run a game. Marking a half-set-up
 # board "done" is worse than failing: the deploy flow checks this marker, skips setup,

@@ -105,6 +105,7 @@ EOF
     # copy so the vendored bridge/ stays verbatim:
     #   buttons J/K/L (shipped A/S/ENTER collides with WASD movement on a PC keyboard)
     #   d-pad W/A/S/D (shipped arrow keys; jam games move on WASD)
+    #   bridge self-check started right before App.run() (module written below)
     python3 - "$T/app/python/config.json" "$T/app/python/main.py" <<'PYEOF'
 import json, sys
 cfg, mainpy = sys.argv[1], sys.argv[2]
@@ -119,8 +120,65 @@ for old, new in (('"UP"', '"W"'), ('"DOWN"', '"S"'), ('"LEFT"', '"A"'), ('"RIGHT
     n += s.count(old)
     s = s.replace(old, new)
 assert n == 24, f"d-pad token count changed upstream ({n} != 24) — re-check the patch"
+assert s.count("\nApp.run()") == 1, "App.run() call moved upstream — re-check the patch"
+s = s.replace("\nApp.run()", "\n__import__('summer_bridge_check').start(settings)\nApp.run()")
 open(mainpy, "w", encoding="utf-8", newline="").write(s)
 PYEOF
+    # The bridge firmware is persistent (flashed below, not app-owned), so nothing
+    # reflashes it when another App Lab app takes over the MCU. This probe runs on
+    # every game start: the bridge's own apply_settings RPC answers in milliseconds
+    # when it is there; when it is not, drop a flag the host's summer-bridge-flash
+    # path unit (setup-board.sh) turns into an upload of the prebuilt firmware.
+    cat > "$T/app/python/summer_bridge_check.py" <<'EOF'
+# Summer's — not part of the vendored Arduino bridge. Started from main.py.
+import threading, time
+from arduino.app_utils import Bridge
+
+FLAG = "/app/.reflash-bridge"   # app folder is bind-mounted at /app
+GRACE_S = 15                    # cold boot: the MCU may still be starting alongside us
+REPAIR_S = 120                  # host upload of the prebuilt image + MCU restart
+
+
+def start(settings):
+    args = (settings["sensX"], settings["sensY"], settings["accel"],
+            settings["dead"], settings["invertY"])
+    last = [None]
+
+    def alive():
+        try:
+            Bridge.call("apply_settings", *args, timeout=3)
+            return True
+        except Exception as e:   # TimeoutError: silence; ValueError: foreign sketch
+            last[0] = e
+            return False
+
+    def wait(seconds, patient=True):
+        t0 = time.time()
+        while time.time() - t0 < seconds:
+            if alive():
+                return round(time.time() - t0, 1)
+            if not patient and isinstance(last[0], ValueError):
+                return None   # something answered and lacks our RPC: no point waiting
+            time.sleep(1)
+        return None
+
+    def run():
+        # Silence may just be the MCU still booting next to us; an answer that does not
+        # know apply_settings is a foreign sketch and gets reflashed right away.
+        t0 = time.time()
+        if wait(GRACE_S, patient=False) is not None:
+            print("bridge check: ok", flush=True)
+            return
+        print(f"bridge check: MCU not answering ({last[0]}) — requesting reflash", flush=True)
+        open(FLAG, "w").close()
+        if wait(REPAIR_S) is not None:
+            print(f"bridge check: bridge restored after {time.time() - t0:.0f} s", flush=True)
+        else:
+            print("bridge check: FAILED — controls are down; check "
+                  "'journalctl -u summer-bridge-flash' on the board", flush=True)
+
+    threading.Thread(target=run, name="summer-bridge-check", daemon=True).start()
+EOF
     # A team's saved key map survives redeploys: keep the old app's config.json.
     if [ -f "$APP/python/config.json" ]; then
         cp "$APP/python/config.json" "$T/app/python/config.json"
