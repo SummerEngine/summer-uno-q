@@ -1,8 +1,8 @@
 # Uno Q game startup performance
 
 This note records the cold-boot delay observed with a Summer game installed as the
-Arduino App CLI default app, identifies the dominant operation, and proposes one
-focused optimization.
+Arduino App CLI default app, identifies the dominant operation, and documents the
+deployed optimization and its board measurements.
 
 ## Baseline
 
@@ -39,14 +39,13 @@ Source evidence, pinned to the revisions inspected:
 - [`app.Load` treats the `sketch/` directory as the sketch-bearing signal](https://github.com/arduino/arduino-app-cli/blob/1df36867f7a1a09876b1e9e8be28d7fc15fddc72/internal/orchestrator/app/app.go#L91-L102)
 - [App Lab's Debian build copies its desktop file into XDG autostart](https://github.com/arduino/arduino-app-lab/blob/8947b90ec81c4455ad28ef14d215bacb89837623/standalone-apps/app-lab-desktop/build/debian/Dockerfile#L70-L81)
 
-## One focused optimization
+## Implemented optimization
 
 Treat the Modulino bridge as board firmware rather than a component recompiled with
 every game boot:
 
-1. during setup or redeploy, compile and upload the canonical bridge once with Arduino
-   CLI using `arduino:zephyr:unoq:wait_linux_boot=yes` (`Wait for Linux`) or the
-   `wait_linux_boot=no` immediate mode;
+1. during redeploy, compile and upload the canonical bridge once with Arduino
+   CLI using `arduino:zephyr:unoq:wait_linux_boot=yes` (`Wait for Linux`);
 2. install the Summer game app without a `sketch/` directory;
 3. retain `/home/arduino/.summer/bridge/sketch` as the canonical source for the next
    explicit redeploy.
@@ -62,12 +61,30 @@ Source evidence:
 - [UNO Q defines `Wait for Linux`, `Immediate`, and `Wait for App` modes](https://github.com/arduino/ArduinoCore-zephyr/blob/79b3f1afdad455f55e4a25030953617152c0227c/boards.txt#L579-L583)
 - [the loader resets and then waits on the per-boot app signal](https://github.com/arduino/ArduinoCore-zephyr/blob/79b3f1afdad455f55e4a25030953617152c0227c/loader/main.c#L225-L278)
 
-With a non-app-gated firmware image, `StartDefaultApp` can skip
-`compileUploadSketch` and proceed to cached Python provisioning and
-`docker compose up`. Based on the baseline, the expected improvement is approximately
-80–95 seconds, bringing LightDM-to-game time from about 107 seconds to roughly 10–25
-seconds. This remains an estimate until the same cold-boot measurement is repeated with
-the candidate change.
+`board/install-game.sh` implements this flow. With a non-app-gated firmware image,
+`StartDefaultApp` skips `compileUploadSketch` and proceeds directly to Python
+provisioning and `docker compose up`.
+
+Two consecutive physical-board reboots on 2026-09-04 produced the following host-clock
+measurements. Times start when the reboot command is issued, so the approximately
+30-second bootloader/Linux interval is included:
+
+| Event | Reboot 1 | Reboot 2 |
+|---|---:|---:|
+| USB ADB available / LightDM active | 31 s | 30 s |
+| `arduino-app-cli.service` active | 33 s | 32 s |
+| Game runner container and fullscreen game process started | 36 s | 35 s |
+| Python bridge API answered `/api/state` | 48 s | 47 s |
+
+The app-cli-to-game portion fell from 96 seconds to 3 seconds. The total measured
+reboot-to-game-process time is now 35–36 seconds. Both boots reported `Grid Hop` as
+`running`, retained an app directory without `sketch/`, kept
+`summer-hid-injector.service` active, and had no `arduino-app-lab` process.
+
+After the second reboot, a test injected `W/A/S/D`, `Space`, `Tab`, and `R` into the
+same UDP endpoint used by the Modulino bridge and read the exact key-down/key-up
+sequence back from `UNOQ Keyboard`. This verifies the post-bridge software input path;
+the physical Qwiic/I2C modules still require the planned hardware test.
 
 ## Ownership and recovery risk
 
@@ -89,20 +106,14 @@ the firmware currently on the MCU and skip compile/upload only when both match. 
 the ownership caveat but belongs in the upstream orchestrator rather than this deployment
 script.
 
-## Required validation before merging
+## Validation status
 
-Run the same experiment on a connected board:
+The fast boot path, default-app recovery, game process, App Lab suppression, bridge API,
+virtual input device, and software key path were verified on the connected board across
+two reboots. A person still needs to confirm two things that automation cannot establish
+without the missing modules/display observation:
 
-1. deploy normally and confirm joystick/button input;
-2. compile/upload the same bridge with `wait_linux_boot=yes`, then install the app
-   without `sketch/`;
-3. cold reboot;
-4. capture `journalctl -b -o short-iso -u lightdm -u arduino-app-cli`;
-5. capture Docker `Created` and `StartedAt` timestamps;
-6. confirm the game reaches fullscreen and app status becomes `running`;
-7. confirm physical Modulino input still reaches the game;
-8. repeat one more cold boot to rule out a one-run cache effect.
-
-Do not merge the optimization from source inspection alone. The current evidence proves
-where the time goes; it does not yet prove that the bridge firmware resumes correctly
-after a cold boot without App CLI's sketch path.
+1. connect the physical Modulino joystick and three buttons and confirm their configured
+   actions reach the game;
+2. confirm the expected first frame is visible on the attached display at roughly the
+   measured 35–36 second process-start point.

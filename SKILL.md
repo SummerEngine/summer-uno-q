@@ -261,14 +261,13 @@ adb shell "sed -i 's/\r$//' /home/arduino/install-game.sh"
 adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"
 ```
 
-Success is a line starting `OK:`. Starting an app that contains the bridge sketch
-currently compiles and flashes that sketch — expect **several minutes** on the first
-deploy and about 80–100 seconds on a cached cold boot. It is not hung, but it is a
-known startup bottleneck: see `docs/startup-performance.md` for the measured timeline
-and the non-app-gated one-shot firmware direction. Do not implement the tempting
-"delete sketch after start" shortcut: App CLI flashes it in `Wait for App` mode, so
-the MCU can remain blocked after the next reboot. A **3D** game may also sit on the
-Summer splash while GLES shaders compile on first launch.
+Success is a line starting `OK:`. Each deploy compiles and flashes the persistent
+Modulino bridge in `Wait for Linux` mode — expect **several minutes** on the first
+deploy. The installed game intentionally has no app-owned `sketch/`, so later cold
+boots skip that compile/upload and proceed directly to the containers. See
+`docs/startup-performance.md` for the measured old timeline and fast-path design.
+A **3D** game may also sit on the Summer splash while GLES shaders compile on first
+launch.
 On failure the installer prints the app logs — read them before retrying.
 
 Every deploy also makes the game the **boot app**: power-cycling the board starts it

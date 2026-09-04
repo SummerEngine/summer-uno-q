@@ -134,9 +134,9 @@ adb push board/install-game.sh /home/arduino/install-game.sh
 adb shell 'bash /home/arduino/install-game.sh /home/arduino/game-linux-arm64.zip "Grid Hop" "🧩"'
 ```
 
-The first install compiles and uploads the Modulino sketch and can take several
-minutes. Its cache is retained inside the app so redeploys of the unchanged bridge are
-faster.
+Each install compiles and uploads the persistent Modulino firmware in `Wait for Linux`
+mode. This deploy-time step can take several minutes, but the installed app deliberately
+contains no `sketch/`, so normal cold boots do not compile or upload it again.
 
 ## Verification gates
 
@@ -169,11 +169,11 @@ the Qwiic/I2C discovery and electrical leg remain a required hardware test.
 
 - The Arduino SBC package installs `/etc/xdg/autostart/ArduinoAppLab.desktop`.
   `setup-board.sh` now shadows it with a per-user entry containing `Hidden=true`; this
-  suppresses only the editor window and preserves `arduino-app-cli.service`. The override
-  is source-verified but still needs a physical reboot check on the board.
-- On the observed cold boot, App Lab appeared first and the game became visible roughly
-  two minutes later. The measured breakdown and proposed one-shot bridge-flash fast path
-  are in [`startup-performance.md`](startup-performance.md).
+  suppresses only the editor window and preserves `arduino-app-cli.service`. Two board
+  reboots verified that the daemon and game ran while no `arduino-app-lab` process did.
+- The persistent-bridge fast path reduced measured reboot-to-game-process time to
+  35–36 seconds on two consecutive boots. The original profile, implementation rationale,
+  and exact measurements are in [`startup-performance.md`](startup-performance.md).
 - `arduino-app-cli app list` can briefly report `failed` while boot recovery is still
   creating the containers. Confirm container state and re-read the status before calling
   it a persistent failure.
