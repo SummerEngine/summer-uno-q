@@ -407,6 +407,18 @@ sentences, not a report.
   If you still need the name and emoji, ask for them in that same message. Everything
   else waits.
 
+- **Say one line before a long wait, then go quiet.** A deploy that takes minutes with no
+  message looks like nothing is happening, and the person is left watching a blank chat.
+  Send exactly one of these the moment you start, and nothing else until it finishes:
+
+  > Putting it on the board now. The first deploy also builds the controller sketch, so
+  > give it about five minutes.
+
+  > Updating it on the board, about thirty seconds.
+
+  This is not a status recap: it is one sentence, sent before the wait rather than after
+  it. Do not follow it with progress updates, step counts, or "still working" messages.
+
 - **Don't narrate clean checks.** If the renderer, the import setting and the preset were
   already right, that is not news — say nothing about them. Only speak up when you had to
   change something, or when something is wrong and they need to decide.
