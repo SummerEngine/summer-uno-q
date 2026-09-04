@@ -27,26 +27,45 @@ The Uno Q ships with its own out-of-box setup — board name, password, Wi-Fi �
 the person's to do, not yours. It happens in **Arduino App Lab on their laptop**, with the
 board plugged in over USB-C. Nothing here works until it is done.
 
-**Check first, ask second.** If `adb shell test -f /home/arduino/.summer-hackathon-setup`
-says the marker exists, this board has already been through everything — skip straight to
-Deploy. Otherwise ask, with the list:
+**Check it yourself, then ask only if something is missing.** Two commands, and they are
+worth running before every first deploy rather than trusting anyone's memory:
 
-> Before I can put anything on the board, it needs its own one-time setup — it takes a
-> couple of minutes in Arduino App Lab on your laptop ☀️
+```
+adb shell test -f /home/arduino/.summer-hackathon-setup && echo provisioned
+adb shell "ip -4 addr show wlan0" | grep inet
+```
+
+- **Marker present** — this board has been through everything already; skip to Deploy.
+- **`wlan0` has an address** (e.g. `inet 10.20.10.8/24`) — the wizard was completed. Carry
+  on with the rest of this skill.
+- **No address** — the board is not on Wi-Fi, whatever the person believes. Stop and ask;
+  do not push files or run setup first.
+
+Wi-Fi is not optional here. A board that is not connected keeps showing its own setup
+prompt on screen, over whatever else is running, and a game set to launch at boot does not
+come up. It is also the one part of this you cannot do for them.
+
+The list to give them:
+
+> Before I can put anything on the board, it needs its own one-time setup — a couple of
+> minutes in Arduino App Lab on your laptop ☀️
 >
 > 1. Install and open **Arduino App Lab**, then plug the board in over USB-C.
 > 2. Give the board a name and set a password — **remember the password**, you'll type it
 >    once more later.
-> 3. **Connect it to Wi-Fi.** Don't skip this step: a board with no Wi-Fi keeps showing its
->    own setup prompt on screen, and that sits on top of your game.
+> 3. **Connect it to Wi-Fi.** Don't skip this one: without it the board keeps its setup
+>    prompt on screen and your game won't start on its own.
 >
 > Say when it's done and I'll take it from there.
 
-Then wait. Do not push files, run setup, or start work in the meantime.
+Then wait, and when they say it is done, run the `wlan0` check again rather than taking
+their word for it. Still no address means the Wi-Fi step specifically was skipped or did
+not take — say that, rather than pressing on into a setup that will fail. If the check
+passes but `adb shell hostname` still answers `uno-q`, the wizard was closed early;
+everything else works, so mention it once and continue.
 
-If they say it's done but `adb shell hostname` still answers `uno-q` and
-`adb shell "ip -4 addr show wlan0"` shows no address, the wizard was not completed — say
-which of the two is missing rather than pressing on into a setup that will fail.
+The same check is worth a second look if a board that used to boot straight into its game
+stops doing so: Wi-Fi it has lost has the same effect as Wi-Fi it never had.
 
 ## Inputs to collect from the user
 
