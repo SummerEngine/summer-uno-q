@@ -271,6 +271,8 @@ done
 # Flash persistent controller firmware once per deploy. Wait-for-Linux starts the
 # bridge after the MPU is ready on every later boot without an app-cli signal.
 # App-owned sketches use Wait-for-App and cost ~96 seconds on every cold boot.
+# The per-start probe (summer_bridge_check.py) catches an absent or foreign bridge, not
+# an outdated Summer one — a bridge change needs a redeploy, which is this step.
 if [ "$NO_BRIDGE" != "1" ]; then
     echo ">> flashing persistent Modulino bridge (deploy-time only)..."
     mkdir -p "$BRIDGE_BUILD"
