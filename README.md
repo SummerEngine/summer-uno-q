@@ -468,9 +468,9 @@ no network. Regenerate them only when the pinned versions change:
 
 ## Notes
 
-- Works with any AI coding agent. [`SKILL.md`](SKILL.md) loads as a skill in Claude Code
-  once copied into the skills directory (Step 6); everywhere else — and for a human — it
-  reads as a runbook.
+- Works with any AI coding agent. `summer setup <agent>` installs [`SKILL.md`](SKILL.md)
+  as the `ship-to-unoq` skill, board scripts included, for every supported agent; for a
+  human it reads as a runbook.
 - Plug the Uno Q in with a USB-C **data** cable, straight to the computer, no hub. Allow
   about a minute after power-up before `adb devices` sees it.
 - Multiple games coexist on one board; re-deploying the same name updates in place.
@@ -484,7 +484,3 @@ no network. Regenerate them only when the pinned versions change:
   ```bash
   adb shell "arduino-app-cli app stop user:<slug>; docker rm <slug>-game_runner-1; rm -rf /home/arduino/ArduinoApps/<slug>"
   ```
-- Board internals, for the curious: the game runs in a Docker container wired as an App Lab
-  *local brick*; the host's Mesa backport is shadow-mounted because stock Debian trixie Mesa
-  doesn't know the Adreno 702; `${APP_HOME}` interpolation in brick compose files is
-  unreliable, so the installer writes absolute paths.
