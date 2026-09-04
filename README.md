@@ -46,8 +46,8 @@ to `SKILL.md`. Read it when you get there rather than improvising `adb` commands
 
 Follow the install playbook at
 [github.com/SummerEngine/summer-engine-agent](https://github.com/SummerEngine/summer-engine-agent)
-— **steps -1 through 4 only**. Node detection, `doctor --json`, skills, the engine app,
-browser login. Then stop.
+— **steps -1 through 4 only**. Node detection, `doctor --json`, `setup <agent>` (skills plus
+the MCP server entry), the engine app, browser login. Then stop.
 
 Two things that playbook leaves to you:
 
@@ -88,11 +88,11 @@ A, B and C.** That is the entire input surface. Every mechanic, menu, and intera
 be playable with those four controls and nothing else: no mouse, no text entry, no fourth
 button. The controls reach the game as keystrokes and Step 5 has the exact bindings, but
 those key names are plumbing — **call them the joystick and buttons A/B/C whenever you
-speak to the person, from this question onward.**
-Treat it the way a Game Boy dev treated four directions and two buttons — a creative constraint to
-design *into* from the first idea, not a port target for later. If a proposed mechanic
-needs more inputs, reshape the mechanic now; carry this constraint into
-`brainstorm-game` so the design never drifts off the pad.
+speak to the person, from this question onward.** Treat it the way a Game Boy dev treated
+four directions and two buttons — a creative constraint to design *into* from the first
+idea, not a port target for later. If a proposed mechanic needs more inputs, reshape the
+mechanic now; carry this constraint into `brainstorm-game` so the design never drifts off
+the pad.
 
 Then match it against what already exists — `npx -y summer-engine@latest list templates`
 shows the set, and there are 16 community ones (2D platformer, RPG, grid puzzle, tower
@@ -126,7 +126,7 @@ line what you did — "Set the project up for the Uno Q" is plenty. The only tim
 is up for discussion is when the person explicitly asks for a different one.
 
 Do this immediately after `create`, before anything of their own goes in. A template
-arrives with scenes and art already, which is exactly why this can't wait: both settings
+arrives with scenes and art already, which is exactly why this can't wait: these settings
 change how existing material imports and renders, so applying them later means re-checking
 work that already looked finished.
 
@@ -152,10 +152,8 @@ shading/overrides/force_vertex_shading=true
 
 Godot's defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
 feature tag — so without these the board renders with a 4096 shadow map and soft filtering on
-a phone-class GPU. The shadow lines carry most of the win and cost only harder edges;
-`scaling_3d` renders 3D at 70% while UI and text stay sharp, which beats dropping the design
-resolution again; `force_vertex_shading` changes how lighting reads, so it's the first to drop
-if you don't like it. `2048` is the engine's own mobile default if shadows look coarse.
+a phone-class GPU. Measured on a stock 3D scaffold: 34 fps without these lines, 82 with.
+What each line buys, and what to try when a 3D game is still slow, is in Step 5.
 **Never enable `msaa_3d`** — it is catastrophic on this GPU. And don't try to inherit the
 engine's `.mobile` values by putting `mobile` in the preset's `custom_features`: that tag also
 flips `OS.has_feature("mobile")`, and a game that checks it switches to touchscreen controls
@@ -255,11 +253,11 @@ has no headroom to spare.
 You don't export by hand — the `ship-to-unoq` skill does it for you (Step 6). This preset
 is what it looks for, which is why it goes in at scaffold time.
 
-### Step 5: Performance
+### Step 5: Controls, presentation and performance
 
-2D games run well on this board, and light 3D is fine too — provided the `[display]` block
-from Step 3 is in place (960×540, `stretch/mode="viewport"`). Pixel-art games can go
-lower still; 640×360 buys a lot back.
+2D games run well on this board, and light 3D is fine too — provided Step 3's `[display]`
+block and, for 3D, its profile are in place. Everything below is about what the player
+holds and sees.
 
 **Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
@@ -309,16 +307,10 @@ It must be code: the `display/mouse_cursor/custom_image` project setting gets st
 from `project.godot` by the editor's settings pass on export, and no window/video mode
 hides the pointer on this board (verified — exclusive fullscreen still shows it).
 
-Design inside this budget — one joystick, three buttons — and the same game plays
-naturally in both places: on the handheld (joystick + buttons) and on a PC keyboard
-(left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
-near WASD: action keys must never collide with movement keys. Control changes go through the
-agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
-deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
-
-Games launch **fullscreen** on the board. `stretch/mode="viewport"` keeps the game
-rendering at its design size and scales up for almost nothing, so the frame cost never
-depends on the attached monitor.
+Why J/K/L and not letters near WASD: the same game plays on a PC keyboard too (left hand
+WASD, right hand JKL), and action keys must never collide with movement keys. Control
+changes go through the agent: prefer rebinding the game's own Input Map; if a binding truly
+can't match, the deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
 **Tuning the 3D profile.** The shadow lines carry most of the win and cost only harder
 shadow edges — don't reach for `shadow_enabled=false` instead, which looks worse and gains
