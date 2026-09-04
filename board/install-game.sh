@@ -203,8 +203,21 @@ set -e
 cd /game/game
 BIN=$(ls -Sp . | grep -v '/$' | grep -v '\.pck$' | head -1)
 chmod +x "$BIN" 2>/dev/null || true
-echo "game_runner: launching $BIN ${GAME_FLAGS:-}"
-exec "./$BIN" ${GAME_FLAGS:-}
+# Boot race: with the persistent bridge this container starts ~3 s after app-cli, which
+# can be before LightDM has the X session up. Godot then exits within a second with
+# "all display drivers failed" and, with restart: "no", the game would stay dead. Retry
+# an early failure; a game that ran for a while and exited (menu Quit, real crash) is
+# not retried. Cap: 60 attempts, so a board without a desktop does not loop forever.
+N=0
+while :; do
+    N=$((N + 1)); T0=$(date +%s)
+    echo "game_runner: launching $BIN ${GAME_FLAGS:-}"
+    "./$BIN" ${GAME_FLAGS:-} && exit 0
+    RC=$?
+    if [ $(( $(date +%s) - T0 )) -ge 15 ] || [ $N -ge 60 ]; then exit $RC; fi
+    echo "game_runner: exited $RC after <15 s — display not ready yet, retrying in 2 s"
+    sleep 2
+done
 EOF
 chmod +x "$T/app/run-game.sh"
 

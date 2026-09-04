@@ -24,7 +24,16 @@ printf '[Desktop Entry]\nType=Application\nName=Summer no-blank\nExec=xset s off
 if [ -f /home/arduino/.Xauthority ]; then
     DISPLAY=:0 XAUTHORITY=/home/arduino/.Xauthority xset s off -dpms 2>/dev/null || true
 fi
-echo "1/5 screen locker + blanking disabled"
+# The stock image autostarts the App Lab editor at login. With the persistent bridge the
+# game window appears ~3 s after app-cli, so App Lab maps a few seconds *later*, lands on
+# top of the fullscreen game and takes keyboard focus — the game is hidden and the
+# controls look dead. The board only needs arduino-app-cli.service, not the editor.
+printf '[Desktop Entry]
+Type=Application
+Name=Arduino App Lab
+Hidden=true
+'     > /home/arduino/.config/autostart/ArduinoAppLab.desktop
+echo "1/5 screen locker, blanking, and App Lab window disabled"
 
 # 2. Desktop autologin (needs sudo, once). Without it the board boots to a login
 #    screen and no game can reach the display.

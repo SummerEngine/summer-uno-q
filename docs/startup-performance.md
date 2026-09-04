@@ -86,6 +86,25 @@ same UDP endpoint used by the Modulino bridge and read the exact key-down/key-up
 sequence back from `UNOQ Keyboard`. This verifies the post-bridge software input path;
 the physical Qwiic/I2C modules still require the planned hardware test.
 
+## Two boot races the fast path exposes
+
+Both surfaced on a factory board once the game container started 3 s after app-cli
+instead of 96 s later. Neither can happen while a sketch compile sits in between.
+
+- **X session not up yet.** LightDM autologin and the default app start within the same
+  two seconds. On one boot the game container started at 11:38:42.8, LightDM rewrote
+  `.Xauthority` at 11:38:43.4, and Godot tried X at 11:38:43.6, exiting with "all display
+  drivers failed"; with `restart: "no"` the game stayed dead and the app showed
+  `failed`. The auth file keeps its inode, so the bind mount is fine; it is timing only.
+  `run-game.sh` now retries a launch that exits within 15 s (2 s apart, 60 attempts).
+- **App Lab lands on top.** The stock image autostarts the App Lab editor at login. It
+  mapped 4 s after the game window, maximized, and took X focus: the fullscreen game
+  was underneath with no keyboard input. `setup-board.sh` hides that autostart entry
+  (user-level, `Hidden=true`); the board only needs `arduino-app-cli.service`.
+
+Without Wi-Fi the fast path itself is unaffected: app-cli started the default app 2 s
+after LightDM and the Python provisioning ran from cache.
+
 ## Ownership and self-repair
 
 The STM32 firmware persists across a normal reboot, which makes a one-shot flash viable.
