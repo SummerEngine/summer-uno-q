@@ -15,6 +15,7 @@ EMOJI=${3:-🎮}
 APPS=/home/arduino/ArduinoApps
 IMAGE=summer-game-runner:0.1.0
 BRIDGE=/home/arduino/.summer/bridge
+BRIDGE_BUILD=/home/arduino/.summer/bridge-build
 NO_BRIDGE=${SUMMER_NO_BRIDGE:-0}
 
 NAME=${NAME//\"/}
@@ -94,10 +95,11 @@ description: "$NAME — built with Summer Engine"
 bricks:
   - game_runner:
 EOF
-    # Bridge rides inside the game app (App Lab runs one app at a time, so it
-    # cannot be its own app). Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.
+    # The Python side rides inside the game app. The MCU sketch is flashed
+    # separately below in Wait-for-Linux mode and is deliberately NOT copied
+    # into the installed app: app-cli recompiles every app-owned sketch at boot.
+    # Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.
     cp -rp "$BRIDGE/python" "$T/app/python"
-    cp -rp "$BRIDGE/sketch" "$T/app/sketch"
     cp -rp "$BRIDGE/ui" "$T/app/ui"
     # Our defaults differ from the bridge's shipped ones — both patched in the STAGED
     # copy so the vendored bridge/ stays verbatim:
@@ -169,9 +171,8 @@ services:
     entrypoint: ["/bin/sh", "/game/run-game.sh"]
 EOF
 
-# Carry the old app's build cache (sketch artifacts + python venv) into the new
-# assembly - without it every redeploy recompiles the unchanged bridge sketch,
-# ~4.5 min instead of ~1. -p above keeps sketch mtimes stable for the same reason.
+# Carry the old app's Python environment cache into the new assembly. The persistent
+# bridge has its own build directory at $BRIDGE_BUILD and is never app-owned.
 if [ -d "$APP/.cache" ]; then
     cp -a "$APP/.cache" "$T/app/.cache"
 fi
@@ -184,6 +185,23 @@ arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
 for RUNNING in $(arduino-app-cli app list 2>/dev/null | awk '$1 ~ /^user:/ && $(NF-1) == "running" {print $1}'); do
     [ "$RUNNING" = "user:$SLUG" ] || arduino-app-cli app stop "$RUNNING" >/dev/null 2>&1 || true
 done
+
+# Flash persistent controller firmware once per deploy. Wait-for-Linux starts the
+# bridge after the MPU is ready on every later boot without an app-cli signal.
+# App-owned sketches use Wait-for-App and cost ~96 seconds on every cold boot.
+if [ "$NO_BRIDGE" != "1" ]; then
+    echo ">> flashing persistent Modulino bridge (deploy-time only)..."
+    mkdir -p "$BRIDGE_BUILD"
+    arduino-cli compile \
+        --fqbn arduino:zephyr:unoq:wait_linux_boot=yes \
+        --build-path "$BRIDGE_BUILD" \
+        "$BRIDGE/sketch"
+    arduino-cli upload \
+        --fqbn arduino:zephyr:unoq:wait_linux_boot=yes \
+        --input-dir "$BRIDGE_BUILD" \
+        "$BRIDGE/sketch"
+fi
+
 mkdir -p "$APPS"
 rm -rf "$APP"
 mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename
