@@ -31,9 +31,13 @@ board plugged in over USB-C. Nothing here works until it is done.
 worth running before every first deploy rather than trusting anyone's memory:
 
 ```
-adb shell test -f /home/arduino/.summer-hackathon-setup && echo provisioned
+adb shell "test -f /home/arduino/.summer-hackathon-setup && echo provisioned"
 adb shell "ip -4 addr show wlan0" | grep inet
 ```
+
+Keep the quotes exactly as written. Unquoted, a Git Bash / MSYS shell on Windows rewrites
+the path and answers `test: C:/Program: binary operator expected`, which reads like a
+board problem and is not one.
 
 - **Marker present** — this board has been through everything already; skip to Deploy.
 - **`wlan0` has an address** (e.g. `inet 10.20.10.8/24`) — the wizard was completed. Carry
@@ -45,16 +49,18 @@ Wi-Fi is not optional here. A board that is not connected keeps showing its own 
 prompt on screen, over whatever else is running, and a game set to launch at boot does not
 come up. It is also the one part of this you cannot do for them.
 
-The list to give them:
+**Send this list exactly as written.** The numbering matches the order App Lab's wizard
+asks in, and the Wi-Fi line carries the warning people most need. Do not summarise it,
+reorder it, or add steps of your own:
 
 > Before I can put anything on the board, it needs its own one-time setup — a couple of
 > minutes in Arduino App Lab on your laptop ☀️
 >
 > 1. Install and open **Arduino App Lab**, then plug the board in over USB-C.
-> 2. Give the board a name and set a password — **remember the password**, you'll type it
->    once more later.
+> 2. Give the board a name.
 > 3. **Connect it to Wi-Fi.** Don't skip this one: without it the board keeps its setup
 >    prompt on screen and your game won't start on its own.
+> 4. Set a password — **remember it**, you'll type it once more later.
 >
 > Say when it's done and I'll take it from there.
 
@@ -386,7 +392,7 @@ sentences, not a report.
   job, not news. At the sudo handoff the user needs the command and what to wait for; a
   progress dump above it just buries the one thing they have to do. They'll ask if they
   want detail.
-- Shape of the sudo handoff, roughly:
+- **The sudo handoff, sent exactly as written** (only the command's paths change):
 
   > One step needs your terminal — it sets the board up for games, one time:
   > screen-lock off, autologin, the game runtime, and the controller-input service.
