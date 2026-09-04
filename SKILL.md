@@ -232,14 +232,15 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    setup and the first deploy work on a board with no network; without them setup
    falls back to `apt-get`, which fails on an offline board. Do not tell the user
    the board needs internet — with the kit pushed, it doesn't.
-3. The setup script needs sudo, and sudo prompts for a password — **your shell has
-   no interactive stdin, so do NOT run this step yourself; it will hang.** Give the
-   user this command to run in their own terminal, and wait for them to confirm:
+3. Run setup directly. On the verified factory image this is non-interactive: the
+   script uses the `arduino` user's factory Docker access for its small set of
+   root-only host operations, so do not hand a terminal command to the user and do
+   not ask them to create or reveal a board password:
    ```
-   adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
+   adb shell "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
    ```
-   On a factory-fresh board the sudo prompt asks them to CREATE the board password —
-   they type it themselves; never ask them to tell it to you.
+   The helper image, security boundary, factory password-age fix, and verification
+   gates are documented in `docs/passwordless-provisioning.md` in the source repo.
 4. The script prints `Setup complete` when done; it is idempotent, so on any
    doubt have the user re-run it. If it reported the autologin step as already
    configured and the image as present, setup was already done — carry on.
@@ -260,11 +261,14 @@ adb shell "sed -i 's/\r$//' /home/arduino/install-game.sh"
 adb shell "bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"
 ```
 
-Success is a line starting `OK:`. The first deploy of a game compiles and flashes
-the bridge sketch — expect **~5 minutes** with no output during the build; it is not
-hung. Updating an existing game is the same command with the same name and takes
-~30 seconds. A **3D** game then sits on the Summer splash for another 60–100 s on its
-first launch while GLES shaders compile — also not hung; later launches are quick.
+Success is a line starting `OK:`. Starting an app that contains the bridge sketch
+currently compiles and flashes that sketch — expect **several minutes** on the first
+deploy and about 80–100 seconds on a cached cold boot. It is not hung, but it is a
+known startup bottleneck: see `docs/startup-performance.md` for the measured timeline
+and the non-app-gated one-shot firmware direction. Do not implement the tempting
+"delete sketch after start" shortcut: App CLI flashes it in `Wait for App` mode, so
+the MCU can remain blocked after the next reboot. A **3D** game may also sit on the
+Summer splash while GLES shaders compile on first launch.
 On failure the installer prints the app logs — read them before retrying.
 
 Every deploy also makes the game the **boot app**: power-cycling the board starts it
@@ -336,23 +340,8 @@ sentences, not a report.
 
 - **No status recaps.** Never post a "Status so far", a list of what you verified, or an
   inventory of steps you skipped. You checked the zip and the board — good, that's your
-  job, not news. At the sudo handoff the user needs the command and what to wait for; a
-  progress dump above it just buries the one thing they have to do. They'll ask if they
-  want detail.
-- Shape of the sudo handoff, roughly:
-
-  > One step needs your terminal — it sets the board up for games, one time:
-  > screen-lock off, autologin, the game runtime, and the controller-input service.
-  > It'll ask for the board's sudo password (a fresh board asks you to create one) ☀️
-  >
-  > ```
-  > adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
-  > ```
-  >
-  > Wait for `Setup complete` and say go.
-
-  If you still need the name and emoji, ask for them in that same message. Everything
-  else waits.
+  job, not news. Fresh-board setup is agent-run and passwordless on the verified image;
+  do not invent a user terminal handoff. They'll ask if they want detail.
 
 - **Don't narrate clean checks.** If the renderer, the import setting and the preset were
   already right, that is not news — say nothing about them. Only speak up when you had to

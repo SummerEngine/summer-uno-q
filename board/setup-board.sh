@@ -1,18 +1,36 @@
 #!/bin/bash
 # One-time Arduino Uno Q setup for running Summer Engine games. Runs ON the board.
-# Safe to re-run (idempotent). Needs sudo ONLY for the autologin step, and only
-# the first time; on a factory-fresh board the first sudo asks you to CREATE a
-# password — pick one and remember it, it becomes the board's password.
+# Safe to re-run (idempotent). It does not require a board password: factory
+# images put the arduino user in the docker group, so the stock Arduino Python
+# brick can enter the host namespaces for the few root-only setup operations.
 #
 # Usage: setup-board.sh [path-to-summer-game-runner-0.1.0.tar.gz]
 set -uo pipefail
 
 IMAGE=summer-game-runner:0.1.0
+ROOT_HELPER_IMAGE=ghcr.io/arduino/app-bricks/python-apps-base:0.10.1
 MARKER=/home/arduino/.summer-hackathon-setup
 TARBALL=${1:-}
 IMAGE_OK=1
 
 echo "☀️ Summer Uno Q board setup"
+
+# Run a host command as root without interactive sudo. Docker-group membership is
+# already root-equivalent; using the stock, factory-cached Arduino image keeps this
+# offline and avoids asking the participant to create/type a password on the board.
+root_exec() {
+    if sudo -n true 2>/dev/null; then
+        sudo "$@"
+        return
+    fi
+    docker image inspect "$ROOT_HELPER_IMAGE" >/dev/null 2>&1 || {
+        echo "ERROR: passwordless setup needs the factory-cached $ROOT_HELPER_IMAGE image"
+        return 1
+    }
+    docker run --rm --user 0 --privileged --pid=host \
+        --entrypoint /usr/bin/nsenter "$ROOT_HELPER_IMAGE" \
+        -t 1 -m -u -i -n -p -- "$@"
+}
 
 # 1. Screen locker + blanking off (user-level, no sudo). A locked/blanked session
 #    freezes every game on the board — this is mandatory, not cosmetic.
@@ -20,25 +38,34 @@ pkill -u arduino light-locker 2>/dev/null || true
 mkdir -p /home/arduino/.config/autostart
 printf '[Desktop Entry]\nType=Application\nName=Screen Locker\nHidden=true\n' \
     > /home/arduino/.config/autostart/light-locker.desktop
+# The SBC package installs App Lab into /etc/xdg/autostart. The game only needs
+# arduino-app-cli.service, not the editor window covering the display at login.
+printf '[Desktop Entry]\nType=Application\nName=Arduino App Lab\nHidden=true\n' \
+    > /home/arduino/.config/autostart/ArduinoAppLab.desktop
 printf '[Desktop Entry]\nType=Application\nName=Summer no-blank\nExec=xset s off -dpms\n' \
     > /home/arduino/.config/autostart/summer-noblank.desktop
 if [ -f /home/arduino/.Xauthority ]; then
     DISPLAY=:0 XAUTHORITY=/home/arduino/.Xauthority xset s off -dpms 2>/dev/null || true
 fi
-echo "1/5 screen locker + blanking disabled"
+echo "1/5 screen locker, App Lab window, and blanking disabled"
 
-# 2. Desktop autologin (needs sudo, once). Without it the board boots to a login
-#    screen and no game can reach the display.
+# 2. Desktop autologin. Without it the board boots to a login screen and no game
+#    can reach the display.
+# A factory image marks the blank password as expired (last-change day 0), which
+# makes PAM reject even LightDM's dedicated autologin path. Mark it current without
+# creating a password; remote password authentication remains unavailable.
+root_exec chage -d "$(date +%F)" arduino
 if [ -f /etc/lightdm/lightdm.conf.d/60-autologin.conf ]; then
     echo "2/5 autologin already configured"
 else
-    echo "2/5 enabling autologin (sudo — on a fresh board this CREATES the password)..."
+    echo "2/5 enabling passwordless desktop autologin..."
     printf '[Seat:*]\nautologin-user=arduino\nautologin-user-timeout=0\n' > /tmp/60-autologin.conf
-    sudo sh -c 'mkdir -p /etc/lightdm/lightdm.conf.d && cp /tmp/60-autologin.conf /etc/lightdm/lightdm.conf.d/60-autologin.conf' \
-        || { echo "ERROR: autologin needs sudo"; exit 1; }
+    root_exec mkdir -p /etc/lightdm/lightdm.conf.d
+    root_exec cp /tmp/60-autologin.conf /etc/lightdm/lightdm.conf.d/60-autologin.conf \
+        || { echo "ERROR: could not configure autologin"; exit 1; }
     if ! loginctl list-sessions --no-legend 2>/dev/null | grep -q " arduino "; then
         echo "    no active session — restarting login manager to log in now"
-        sudo systemctl restart lightdm
+        root_exec systemctl restart lightdm
     else
         echo "    active session kept; autologin applies from next boot"
     fi
@@ -85,9 +112,9 @@ fi
 
 if ! dpkg -s python3-evdev >/dev/null 2>&1; then
     if [ -f /home/arduino/python3-evdev.deb ]; then
-        sudo dpkg -i /home/arduino/python3-evdev.deb
+        root_exec dpkg -i /home/arduino/python3-evdev.deb
     else
-        sudo apt-get install -y python3-evdev   # online fallback
+        root_exec apt-get install -y python3-evdev   # online fallback
     fi
 fi
 python3 -c 'import evdev' || { echo "    ERROR: python3-evdev unusable"; exit 1; }
@@ -101,7 +128,7 @@ if [ -f /home/arduino/arduino15-libs.tar.gz ]; then
         || echo "    WARNING: lib cache extraction failed — first game deploy will need the board online"
 fi
 
-sudo tee /etc/systemd/system/summer-hid-injector.service >/dev/null <<UNIT
+cat > /tmp/summer-hid-injector.service <<UNIT
 [Unit]
 Description=Summer HID injector (Modulino bridge -> uinput)
 StartLimitIntervalSec=0
@@ -114,8 +141,9 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 UNIT
-sudo systemctl daemon-reload
-sudo systemctl enable --now summer-hid-injector.service
+root_exec cp /tmp/summer-hid-injector.service /etc/systemd/system/summer-hid-injector.service
+root_exec systemctl daemon-reload
+root_exec systemctl enable --now summer-hid-injector.service
 echo "5/5 HID injector service installed"
 
 # Only claim completion if the board can actually run a game. Marking a half-set-up

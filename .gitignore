@@ -1,4 +1,5 @@
 # ~106 MB, lives in the summer-builds release
 image/*.tar.gz
+.cache/
 
 # kit/ binaries are committed on purpose: a fresh clone must be a complete offline kit

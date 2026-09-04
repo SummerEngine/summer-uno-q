@@ -398,8 +398,11 @@ conflict.
   removal, the runner image, the Modulino input service and its offline kit. The ~105 MB
   runner image downloads to the laptop first and is pushed over USB, so the board itself
   needs no network. Later deploys skip all of it.
-- There is one sudo prompt the **user** types themselves, in their own terminal. On a
-  factory-fresh board that prompt is *creating* the board password. Never ask them for it.
+- On a verified factory image, provisioning needs no App Lab onboarding and no board
+  password. The reviewed setup helper uses the factory `arduino` user's existing
+  root-equivalent Docker access only for the required host operations. See
+  [`docs/passwordless-provisioning.md`](docs/passwordless-provisioning.md) for the
+  mechanism, security boundary, exact flow, and verification gates.
 - **Deploying is not the same as seeing it.** The game starts on the board whether or not
   a screen is attached, so plug the board into a monitor (HDMI/DSI) to actually play it.
 - **Nothing counts as working until it has been played on the board** — on a screen, with
@@ -446,6 +449,8 @@ from what they tell you, don't assume one.
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
 | `kit/` | maintainer | Offline provisioning artifacts, committed so a fresh clone is a complete kit — see Kit prep below |
+| `docs/passwordless-provisioning.md` | maintainer | No-App-Lab/passwordless factory-board mechanism, security notes, and verification |
+| `docs/startup-performance.md` | maintainer | Measured cold-boot timeline, compile/upload bottleneck, and proposed fast path |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).
