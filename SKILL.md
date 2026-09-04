@@ -74,7 +74,7 @@ confirm, under `[rendering]`:
 Also confirm, under `[display]`: `window/stretch/mode="viewport"` and
 `window/size/viewport_width` no larger than 960. Anything else renders at screen
 resolution — ~38 fps at 1080p on this board vs 60+ at 960x540. If the settings are
-missing or larger, stop and fix them with the user (repo README, Step 3): it is a
+missing or larger, fix them and say so in one line (repo README, Step 3): it is a
 two-line change plus a look at the game in the editor, and shipping without it means
 "the game is slow on the board" reports that are really a resolution bug. The one
 exception: the user explicitly choosing a different resolution — their call, ship it;
@@ -282,13 +282,13 @@ controls arrive as ordinary keyboard events — bind these in the game:
 
 | Physical | Key |
 |---|---|
-| Joystick (d-pad mode) | W / A / S / D |
+| Joystick | W / A / S / D |
 | Button A / B / C | J / K / L |
 
-**Build the game to this map and no remapping is ever needed** — movement on
-W/A/S/D (fixed — the installer patches the bridge's d-pad to WASD at assembly),
-actions on J / K / L (also set by the installer; deliberately away from WASD so the
-two hands never collide). The user never opens a config page; keymapping is your
+**Build the game to this map and no remapping is ever needed** — movement on W/A/S/D
+(fixed — the installer patches the bridge's joystick output to WASD at assembly), actions
+on J / K / L (also set by the installer; deliberately away from WASD so the two hands never
+collide). The user never opens a config page; keymapping is your
 job, not theirs.
 
 **When the user asks for different controls, that request comes to you, the agent —
@@ -314,9 +314,13 @@ names; `mode` is `hold` (key down while pressed) or `tap`. The config loads at a
 start, persists, and survives normal redeploys; a `SUMMER_NO_BRIDGE=1` deploy
 discards it. No Modulinos attached = nothing happens, keyboard still works.
 
-Troubleshooting: `systemctl status summer-hid-injector` on the board;
-a live injector moves the pointer on a UDP packet to 127.0.0.1:5555 (the sketch
-sends these; send one yourself to prove the injector end of the chain).
+Troubleshooting: `systemctl status summer-hid-injector` on the board. To prove the
+injector end of the chain, send it the same UDP packet the sketch would; the pointer moves:
+
+```
+adb shell "python3 -c \"import socket,json; socket.socket(socket.AF_INET,socket.SOCK_DGRAM).sendto(json.dumps({'type':'mouse_move','dx':50,'dy':50}).encode(),('127.0.0.1',5555))\""
+```
+
 If a sketch build ever blocks a deploy, re-run install-game.sh with
 `SUMMER_NO_BRIDGE=1` for a sketch-less install:
 `adb shell "SUMMER_NO_BRIDGE=1 bash /home/arduino/install-game.sh /home/arduino/game-upload.zip '<Game Name>' '<emoji>'"`
@@ -360,18 +364,19 @@ sentences, not a report.
   them, don't chase them, and don't paste them at the user — they never see the game log
   and quoting an `ERROR:` line at someone whose deploy just succeeded only worries them.
 - **On success: one happy line, then the controls, then hand them the wheel.** The player
-  is holding a Modulino pad, not a keyboard — so name the physical controls and say what
+  is holding a joystick and three buttons, not a keyboard — so name those and say what
   each one does *in this game*. You wrote the bindings, so you know: translate J/K/L back
-  into Button A/B/C and their in-game action. Something like:
+  into buttons A/B/C and their in-game action. Something like:
 
   > Voxel Island is on the board ☀️ — joystick to move, **A** to jump, **B** to place a
   > block, **C** to pause. Go play, and tell me what you want changed.
 
-  Never tell them to press W/A/S/D or J/K/L: those are the keys the pad sends under the
-  hood, and nobody at the table has a keyboard. If a button is unused in this game, leave
-  it out rather than listing it as idle. That's the whole message — no monitor/cable talk,
-  no explanation of virtual displays, no `app logs` command, no App Lab click-through.
-  Keep `app list` and `app logs` for when something actually failed.
+  Never tell them to press W/A/S/D or J/K/L, here or in any other message: those are the
+  keys the controls send under the hood, and nobody holding the handheld has a keyboard.
+  If a button is unused in this game, leave it out rather than listing it as idle. That's
+  the whole message — no monitor/cable talk, no explanation of virtual displays, no
+  `app logs` command, no App Lab click-through. Keep `app list` and `app logs` for when
+  something actually failed.
 - Don't tell them to open App Lab, browse My Apps, or press Run to start it — the game is
   already running.
 - **If you drove the game yourself to verify it** (injected input, played it, crashed it),

@@ -46,8 +46,31 @@ to `SKILL.md`. Read it when you get there rather than improvising `adb` commands
 
 Follow the install playbook at
 [github.com/SummerEngine/summer-engine-agent](https://github.com/SummerEngine/summer-engine-agent)
-— **steps -1 through 4 only**. Node detection, `doctor --json`, skills, the engine app,
-browser login. Then stop.
+— **steps -1 through 4 only**. Node detection, `doctor --json`, `setup <agent>` (skills plus
+the MCP server entry), the engine app, browser login. Then stop.
+
+Two things that playbook leaves to you:
+
+- **`setup` takes the name of the agent you are running as** — `claude-code`, `cursor`,
+  `codex`, … — and you run it even when `doctor` is all green. `doctor` checks the
+  machine, not your session: its MCP checks prove the server *can* start, not that *your*
+  tool host has it. A green doctor with no Summer tools in your session is the normal
+  failure, not a rare one.
+- **Prove the MCP connection before any other work.** Call one harmless tool,
+  `summer_is_running`, and read what happens:
+  - **The tool does not exist in your session** — the config was written but your host
+    loaded its tool list at startup and has not re-read it. Nothing you run fixes that.
+    Tell the person, in one line, to restart their editor or agent app, then call the tool
+    again once they are back. Do not start Step 2 without it: every build skill assumes
+    these tools, and without them you will hand-write scenes, invent results, and be
+    unable to generate a single asset.
+  - **The tool exists but answers that no editor or local API is reachable** — that is
+    fine for now. It proves the wiring; the editor starts in Step 5.
+  - **It answers** — you are connected. Carry on.
+
+  Run the same check once more right after Step 5b, when the project is up: a
+  `summer_get_project_context` that returns the project is the green light to build. If
+  it fails there, the 5b wait loop has not finished — keep waiting, do not start writing.
 
 **Do not run its Step 5 yet.** That step scaffolds a project, and picking a template
 before you know what the game is means throwing it away or, worse, keeping it. Come back
@@ -60,14 +83,16 @@ Ask before you scaffold. One question, plain language: *what kind of game are yo
 about?* Expect a rough shape rather than a design — "a Game Boy-ish puzzler", "an arcade
 high-score thing", "a little racer".
 
-**The controller is decided before the game is: a 4-way stick and three buttons.**
-That is the entire input surface — movement on W/A/S/D, actions on J, K, L (the
-exact bindings are in Step 5). Every mechanic, menu, and interaction must be playable
-with those seven keys and nothing else: no mouse, no text entry, no fourth button.
-Treat it the way a Game Boy dev treated the d-pad and A/B — a creative constraint to
-design *into* from the first idea, not a port target for later. If a proposed mechanic
-needs more inputs, reshape the mechanic now; carry this constraint into
-`brainstorm-game` so the design never drifts off the pad.
+**The controller is decided before the game is: a joystick and three buttons, printed
+A, B and C.** That is the entire input surface. Every mechanic, menu, and interaction must
+be playable with those four controls and nothing else: no mouse, no text entry, no fourth
+button. The controls reach the game as keystrokes and Step 5 has the exact bindings, but
+those key names are plumbing — **call them the joystick and buttons A/B/C whenever you
+speak to the person, from this question onward.** Treat it the way a Game Boy dev treated
+four directions and two buttons — a creative constraint to design *into* from the first
+idea, not a port target for later. If a proposed mechanic needs more inputs, reshape the
+mechanic now; carry this constraint into `brainstorm-game` so the design never drifts off
+the pad.
 
 Then match it against what already exists — `npx -y summer-engine@latest list templates`
 shows the set, and there are 16 community ones (2D platformer, RPG, grid puzzle, tower
@@ -94,8 +119,14 @@ npx -y summer-engine@latest create <template> <name>
 
 ### Step 3: Configure the project for the board
 
+**Steps 3 and 4 are not questions.** The person chose a game; they did not choose a renderer,
+a resolution or an export target, and asking them to is asking them to know the board.
+Apply everything in these two steps the moment the project exists, then tell them in one
+line what you did — "Set the project up for the Uno Q" is plenty. The only time a value here
+is up for discussion is when the person explicitly asks for a different one.
+
 Do this immediately after `create`, before anything of their own goes in. A template
-arrives with scenes and art already, which is exactly why this can't wait: both settings
+arrives with scenes and art already, which is exactly why this can't wait: these settings
 change how existing material imports and renders, so applying them later means re-checking
 work that already looked finished.
 
@@ -121,10 +152,8 @@ shading/overrides/force_vertex_shading=true
 
 Godot's defaults assume a desktop GPU, and a Linux arm64 export never carries the `mobile`
 feature tag — so without these the board renders with a 4096 shadow map and soft filtering on
-a phone-class GPU. The shadow lines carry most of the win and cost only harder edges;
-`scaling_3d` renders 3D at 70% while UI and text stay sharp, which beats dropping the design
-resolution again; `force_vertex_shading` changes how lighting reads, so it's the first to drop
-if you don't like it. `2048` is the engine's own mobile default if shadows look coarse.
+a phone-class GPU. Measured on a stock 3D scaffold: 34 fps without these lines, 82 with.
+What each line buys, and what to try when a 3D game is still slow, is in Step 5.
 **Never enable `msaa_3d`** — it is catastrophic on this GPU. And don't try to inherit the
 engine's `.mobile` values by putting `mobile` in the preset's `custom_features`: that tag also
 flips `OS.has_feature("mobile")`, and a game that checks it switches to touchscreen controls
@@ -168,7 +197,8 @@ the editor.
 
 ### Step 4: Add the export preset
 
-Add this to the project's `export_presets.cfg`. These values are known-good — a game built
+Add this to the project's `export_presets.cfg` — again without asking; a game that cannot
+export for the board is not a game for the board. These values are known-good — a game built
 with exactly this preset runs on a real board.
 
 **Check for existing presets first.** Most templates already ship an `export_presets.cfg`
@@ -223,11 +253,11 @@ has no headroom to spare.
 You don't export by hand — the `ship-to-unoq` skill does it for you (Step 6). This preset
 is what it looks for, which is why it goes in at scaffold time.
 
-### Step 5: Performance
+### Step 5: Controls, presentation and performance
 
-2D games run well on this board, and light 3D is fine too — provided the `[display]` block
-from Step 3 is in place (960×540, `stretch/mode="viewport"`). Pixel-art games can go
-lower still; 640×360 buys a lot back.
+2D games run well on this board, and light 3D is fine too — provided Step 3's `[display]`
+block and, for 3D, its profile are in place. Everything below is about what the player
+holds and sees.
 
 **Everything runs on keyboard — gameplay AND every menu.** Buttons wired to the board
 arrive as keystrokes, and there is no mouse in a player's hands. Title screen, pause,
@@ -235,7 +265,7 @@ game over, level select: all of it must work with the keyboard alone. A mouse-on
 "Play" button is a game nobody can start. In practice: `grab_focus()` the first button
 of every menu when it appears, set focus neighbors, and **add W/A/S/D to the built-in
 `ui_up`/`ui_down`/`ui_left`/`ui_right` actions and J to `ui_accept`** (Project Settings
-> Input Map) — the handheld's stick sends WASD, and Godot's menu focus listens to the
+> Input Map) — the handheld's joystick sends WASD, and Godot's menu focus listens to the
 `ui_*` actions, not raw keys. Walk every screen start-to-finish with only WASD + J
 before calling it done.
 
@@ -244,24 +274,26 @@ line of gameplay code:**
 
 | Physical control | Key the game must bind |
 |---|---|
-| Joystick (4-way) | **W / A / S / D** — fixed, not remappable. Bind arrow keys too, as aliases of the same actions |
+| Joystick | **W / A / S / D** — fixed, not remappable. Bind arrow keys too, as aliases of the same actions |
 | Button A | J |
 | Button B | K |
 | Button C | L |
 
-**In-game text names the handheld's controls, never the keys.** J/K/L and W/A/S/D are the
-wires under the floor; the player is looking at a stick and three buttons printed **A**,
-**B**, **C**. Every tutorial line, HUD hint, button prompt and menu label that mentions a
-control says it the way the player sees it:
+**Every word anyone reads names the handheld's controls, never the keys.** J/K/L and
+W/A/S/D are the wires under the floor; the person is holding a joystick and three buttons
+printed **A**, **B**, **C**. This covers your own messages while building, every tutorial
+line, HUD hint, button prompt and menu label, and the game's Controls screen — all of it
+says the control the way the player sees it:
 
 | Write this | Not this |
 |---|---|
 | "Press **A** to jump" | "Press J to jump" |
 | "**B** swings, **C** pauses" | "K swings, L pauses" |
-| "Move with the **stick**" | "Move with WASD" / "arrow keys" |
+| "Move with the **joystick**" | "Move with WASD" / "arrow keys" |
+| "the joystick and three buttons" | "a D-pad plus J/K/L" |
 
-Same rule for the game's own "Controls" screen if it has one. A game may *also* mention
-the keyboard for people playing it on a laptop later, but the pad names come first.
+A game may *also* mention the keyboard for people playing it on a laptop later, but the
+handheld's names come first.
 
 **Hide the mouse pointer in code** — one line in any autoload's `_ready()`:
 
@@ -275,16 +307,10 @@ It must be code: the `display/mouse_cursor/custom_image` project setting gets st
 from `project.godot` by the editor's settings pass on export, and no window/video mode
 hides the pointer on this board (verified — exclusive fullscreen still shows it).
 
-Design inside this budget — one stick, three buttons — and the same game plays
-naturally in both places: on the handheld (stick + buttons) and on a PC keyboard
-(left hand WASD, right hand JKL). That's why the buttons are J/K/L and not letters
-near WASD: action keys must never collide with movement keys. Control changes go through the
-agent: prefer rebinding the game's own Input Map; if a binding truly can't match, the
-deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
-
-Games launch **fullscreen** on the board. `stretch/mode="viewport"` keeps the game
-rendering at its design size and scales up for almost nothing, so the frame cost never
-depends on the attached monitor.
+Why J/K/L and not letters near WASD: the same game plays on a PC keyboard too (left hand
+WASD, right hand JKL), and action keys must never collide with movement keys. Control
+changes go through the agent: prefer rebinding the game's own Input Map; if a binding truly
+can't match, the deploy skill (`SKILL.md`, "Modulino input") has a config-file remap.
 
 **Tuning the 3D profile.** The shadow lines carry most of the win and cost only harder
 shadow edges — don't reach for `shadow_enabled=false` instead, which looks worse and gains
@@ -390,6 +416,12 @@ conflict.
 - **Don't improvise `adb`, `docker`, `apt`, or SSH repairs on the board.** Use the skill's
   scripts. An agent improvising on hardware can burn a team's whole day, and the damage
   shows up looking like a game bug.
+- **Don't ask permission for Steps 3 and 4.** "Shall I switch to 960×540 and add the arm64
+  preset?" hands the person a decision they have no basis to make. Apply, then mention.
+- **Don't report settings as results.** `max_fps=60` is a ceiling, not a frame rate;
+  `etc2_astc=true` is an import setting, not a texture that has been seen working;
+  "Uno Q-ready" is something only the board can say. Until it has run there, say what you
+  configured — "set to 960×540 with a 60 fps cap" — never what it achieves.
 - **Don't call the game done from the editor.** Play it on the board.
 
 ---
