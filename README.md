@@ -49,6 +49,29 @@ Follow the install playbook at
 — **steps -1 through 4 only**. Node detection, `doctor --json`, skills, the engine app,
 browser login. Then stop.
 
+Two things that playbook leaves to you:
+
+- **`setup` takes the name of the agent you are running as** — `claude-code`, `cursor`,
+  `codex`, … — and you run it even when `doctor` is all green. `doctor` checks the
+  machine, not your session: its MCP checks prove the server *can* start, not that *your*
+  tool host has it. A green doctor with no Summer tools in your session is the normal
+  failure, not a rare one.
+- **Prove the MCP connection before any other work.** Call one harmless tool,
+  `summer_is_running`, and read what happens:
+  - **The tool does not exist in your session** — the config was written but your host
+    loaded its tool list at startup and has not re-read it. Nothing you run fixes that.
+    Tell the person, in one line, to restart their editor or agent app, then call the tool
+    again once they are back. Do not start Step 2 without it: every build skill assumes
+    these tools, and without them you will hand-write scenes, invent results, and be
+    unable to generate a single asset.
+  - **The tool exists but answers that no editor or local API is reachable** — that is
+    fine for now. It proves the wiring; the editor starts in Step 5.
+  - **It answers** — you are connected. Carry on.
+
+  Run the same check once more right after Step 5b, when the project is up: a
+  `summer_get_project_context` that returns the project is the green light to build. If
+  it fails there, the 5b wait loop has not finished — keep waiting, do not start writing.
+
 **Do not run its Step 5 yet.** That step scaffolds a project, and picking a template
 before you know what the game is means throwing it away or, worse, keeping it. Come back
 for Step 5 (and the 5b wait loop, which matters — `summer run` returns before the local
