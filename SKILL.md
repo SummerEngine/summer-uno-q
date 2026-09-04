@@ -21,6 +21,58 @@ are the product.** The host-side export below is yours to run.
 (where this SKILL.md lives) — resolve it to an absolute path before running, since
 your working directory is the user's project.
 
+## Before anything: has the board had its own first-time setup?
+
+The Uno Q ships with its own out-of-box setup — board name, password, Wi-Fi — and it is
+the person's to do, not yours. It happens in **Arduino App Lab on their laptop**, with the
+board plugged in over USB-C. Nothing here works until it is done.
+
+**Check it yourself, then ask only if something is missing.** Two commands, and they are
+worth running before every first deploy rather than trusting anyone's memory:
+
+```
+adb shell "test -f /home/arduino/.summer-hackathon-setup && echo provisioned"
+adb shell "ip -4 addr show wlan0" | grep inet
+```
+
+Keep the quotes exactly as written. Unquoted, a Git Bash / MSYS shell on Windows rewrites
+the path and answers `test: C:/Program: binary operator expected`, which reads like a
+board problem and is not one.
+
+- **Marker present** — this board has been through everything already; skip to Deploy.
+- **`wlan0` has an address** (e.g. `inet 10.20.10.8/24`) — the wizard was completed. Carry
+  on with the rest of this skill.
+- **No address** — the board is not on Wi-Fi, whatever the person believes. Stop and ask;
+  do not push files or run setup first.
+
+Wi-Fi is not optional here. A board that is not connected keeps showing its own setup
+prompt on screen, over whatever else is running, and a game set to launch at boot does not
+come up. It is also the one part of this you cannot do for them.
+
+**Send this list exactly as written.** The numbering matches the order App Lab's wizard
+asks in, and the Wi-Fi line carries the warning people most need. Do not summarise it,
+reorder it, or add steps of your own:
+
+> Before I can put anything on the board, it needs its own one-time setup — a couple of
+> minutes in Arduino App Lab on your laptop ☀️
+>
+> 1. Install and open **Arduino App Lab**, then plug the board in over USB-C.
+> 2. Give the board a name.
+> 3. **Connect it to Wi-Fi.** Don't skip this one: without it the board keeps its setup
+>    prompt on screen and your game won't start on its own.
+> 4. Set a password — **remember it**, you'll type it once more later.
+>
+> Say when it's done and I'll take it from there.
+
+Then wait, and when they say it is done, run the `wlan0` check again rather than taking
+their word for it. Still no address means the Wi-Fi step specifically was skipped or did
+not take — say that, rather than pressing on into a setup that will fail. If the check
+passes but `adb shell hostname` still answers `uno-q`, the wizard was closed early;
+everything else works, so mention it once and continue.
+
+The same check is worth a second look if a board that used to boot straight into its game
+stops doing so: Wi-Fi it has lost has the same effect as Wi-Fi it never had.
+
 ## Inputs to collect from the user
 
 1. **Path to the project** (the folder containing `project.godot`). **Always export it
@@ -238,7 +290,8 @@ Detect: `adb shell test -f /home/arduino/.summer-hackathon-setup && echo done` �
    ```
    adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
    ```
-   On a factory-fresh board the sudo prompt asks them to CREATE the board password —
+   The prompt wants the board password they set in App Lab. (A board that somehow never
+   went through that wizard is asked to *create* one at this prompt instead.) Either way
    they type it themselves; never ask them to tell it to you.
 4. The script prints `Setup complete` when done; it is idempotent, so on any
    doubt have the user re-run it. If it reported the autologin step as already
@@ -339,11 +392,11 @@ sentences, not a report.
   job, not news. At the sudo handoff the user needs the command and what to wait for; a
   progress dump above it just buries the one thing they have to do. They'll ask if they
   want detail.
-- Shape of the sudo handoff, roughly:
+- **The sudo handoff, sent exactly as written** (only the command's paths change):
 
   > One step needs your terminal — it sets the board up for games, one time:
   > screen-lock off, autologin, the game runtime, and the controller-input service.
-  > It'll ask for the board's sudo password (a fresh board asks you to create one) ☀️
+  > It'll ask for the board password you set in App Lab ☀️
   >
   > ```
   > adb shell -t "bash /home/arduino/setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
@@ -353,6 +406,18 @@ sentences, not a report.
 
   If you still need the name and emoji, ask for them in that same message. Everything
   else waits.
+
+- **Say one line before a long wait, then go quiet.** A deploy that takes minutes with no
+  message looks like nothing is happening, and the person is left watching a blank chat.
+  Send exactly one of these the moment you start, and nothing else until it finishes:
+
+  > Putting it on the board now. The first deploy also builds the controller sketch, so
+  > give it about five minutes.
+
+  > Updating it on the board, about thirty seconds.
+
+  This is not a status recap: it is one sentence, sent before the wait rather than after
+  it. Do not follow it with progress updates, step counts, or "still working" messages.
 
 - **Don't narrate clean checks.** If the renderer, the import setting and the preset were
   already right, that is not news — say nothing about them. Only speak up when you had to

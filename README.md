@@ -389,17 +389,18 @@ Do not improvise adb or docker commands.
 Use absolute paths in the pointer, not relative ones: the agent's working directory is the
 game project, not the clone.
 
-Then give the skill the **project path**, a game name, and an emoji. It exports the project
-headlessly for arm64, provisions the board on first use, and installs the game as an App
-Lab app. Summer can stay open on the project while it exports — that's faster, not a
+Then give the skill the **project path**, a game name, and an emoji. It checks that the
+board has had its own first-time setup (Arduino App Lab on the person's laptop: board name,
+password, Wi-Fi), exports the project headlessly for arm64, provisions the board on first
+use, and installs the game as an App Lab app. Summer can stay open on the project while it exports — that's faster, not a
 conflict.
 
 - The **first** deploy also provisions the board — desktop autologin, screen-locker
   removal, the runner image, the Modulino input service and its offline kit. The ~105 MB
   runner image downloads to the laptop first and is pushed over USB, so the board itself
   needs no network. Later deploys skip all of it.
-- There is one sudo prompt the **user** types themselves, in their own terminal. On a
-  factory-fresh board that prompt is *creating* the board password. Never ask them for it.
+- There is one sudo prompt the **user** types themselves, in their own terminal, asking for
+  the board password they set during the board's own App Lab setup. Never ask them for it.
 - **Deploying is not the same as seeing it.** The game starts on the board whether or not
   a screen is attached, so plug the board into a monitor (HDMI/DSI) to actually play it.
 - **Nothing counts as working until it has been played on the board** — on a screen, with

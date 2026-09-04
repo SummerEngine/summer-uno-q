@@ -1,8 +1,7 @@
 #!/bin/bash
 # One-time Arduino Uno Q setup for running Summer Engine games. Runs ON the board.
-# Safe to re-run (idempotent). Needs sudo ONLY for the autologin step, and only
-# the first time; on a factory-fresh board the first sudo asks you to CREATE a
-# password — pick one and remember it, it becomes the board's password.
+# Safe to re-run (idempotent). Needs sudo ONLY for the autologin step, and only the
+# first time. The password is the one set during the board's own App Lab setup.
 #
 # Usage: setup-board.sh [path-to-summer-game-runner-0.1.0.tar.gz]
 set -uo pipefail
@@ -12,7 +11,7 @@ MARKER=/home/arduino/.summer-hackathon-setup
 TARBALL=${1:-}
 IMAGE_OK=1
 
-echo "☀️ Summer Uno Q board setup"
+echo "==> Summer Uno Q board setup"
 
 # 1. Screen locker + blanking off (user-level, no sudo). A locked/blanked session
 #    freezes every game on the board — this is mandatory, not cosmetic.
@@ -32,7 +31,7 @@ echo "1/5 screen locker + blanking disabled"
 if [ -f /etc/lightdm/lightdm.conf.d/60-autologin.conf ]; then
     echo "2/5 autologin already configured"
 else
-    echo "2/5 enabling autologin (sudo — on a fresh board this CREATES the password)..."
+    echo "2/5 enabling autologin (needs the board password)..."
     printf '[Seat:*]\nautologin-user=arduino\nautologin-user-timeout=0\n' > /tmp/60-autologin.conf
     sudo sh -c 'mkdir -p /etc/lightdm/lightdm.conf.d && cp /tmp/60-autologin.conf /etc/lightdm/lightdm.conf.d/60-autologin.conf' \
         || { echo "ERROR: autologin needs sudo"; exit 1; }
@@ -122,7 +121,7 @@ echo "5/5 HID injector service installed"
 # board "done" is worse than failing: the deploy flow checks this marker, skips setup,
 # then fails on the missing image — and the fix it points at is the setup it just skipped.
 if [ "$IMAGE_OK" != "1" ]; then
-    echo "✗ Setup incomplete — runner image not installed"
+    echo "!!! Setup incomplete: runner image not installed"
     echo "   Not marking this board as set up. Re-run with the tarball path:"
     echo "   setup-board.sh /home/arduino/summer-game-runner-0.1.0.tar.gz"
     exit 1
@@ -135,4 +134,4 @@ grep -q "UNOQ Keyboard" /proc/bus/input/devices || {
     echo "ERROR: injector's virtual keyboard did not appear"; exit 1; }
 
 touch "$MARKER"
-echo "☀️ Setup complete — board is ready"
+echo "==> Setup complete, board is ready"
