@@ -447,6 +447,7 @@ from what they tell you, don't assume one.
 | `board/bridge/` | board | Arduino's Modulino HID bridge, vendored verbatim — see its `ATTRIBUTION.md` |
 | `image/Dockerfile` | board | Source of the prebuilt runner image — GL/EGL, X11, audio libs |
 | `kit/` | maintainer | Offline provisioning artifacts, committed so a fresh clone is a complete kit — see Kit prep below |
+| `docs/startup-performance.md` | maintainer | Measured cold-boot timeline, persistent-bridge fast path, and the per-start bridge self-repair |
 
 The prebuilt runner image (~105 MB) is a release asset:
 [`game-runner-0.1.0`](https://github.com/SummerEngine/summer-builds/releases/tag/game-runner-0.1.0).

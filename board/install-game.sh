@@ -15,6 +15,7 @@ EMOJI=${3:-🎮}
 APPS=/home/arduino/ArduinoApps
 IMAGE=summer-game-runner:0.1.0
 BRIDGE=/home/arduino/.summer/bridge
+BRIDGE_BUILD=/home/arduino/.summer/bridge-build
 NO_BRIDGE=${SUMMER_NO_BRIDGE:-0}
 
 NAME=${NAME//\"/}
@@ -94,15 +95,17 @@ description: "$NAME — built with Summer Engine"
 bricks:
   - game_runner:
 EOF
-    # Bridge rides inside the game app (App Lab runs one app at a time, so it
-    # cannot be its own app). Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.
+    # The Python side rides inside the game app. The MCU sketch is flashed
+    # separately below in Wait-for-Linux mode and is deliberately NOT copied
+    # into the installed app: app-cli recompiles every app-owned sketch at boot.
+    # Files are Arduino's, verbatim — see bridge/ATTRIBUTION.md.
     cp -rp "$BRIDGE/python" "$T/app/python"
-    cp -rp "$BRIDGE/sketch" "$T/app/sketch"
     cp -rp "$BRIDGE/ui" "$T/app/ui"
     # Our defaults differ from the bridge's shipped ones — both patched in the STAGED
     # copy so the vendored bridge/ stays verbatim:
     #   buttons J/K/L (shipped A/S/ENTER collides with WASD movement on a PC keyboard)
     #   d-pad W/A/S/D (shipped arrow keys; jam games move on WASD)
+    #   bridge self-check started right before App.run() (module written below)
     python3 - "$T/app/python/config.json" "$T/app/python/main.py" <<'PYEOF'
 import json, sys
 cfg, mainpy = sys.argv[1], sys.argv[2]
@@ -117,8 +120,76 @@ for old, new in (('"UP"', '"W"'), ('"DOWN"', '"S"'), ('"LEFT"', '"A"'), ('"RIGHT
     n += s.count(old)
     s = s.replace(old, new)
 assert n == 24, f"d-pad token count changed upstream ({n} != 24) — re-check the patch"
+assert s.count("\nApp.run()") == 1, "App.run() call moved upstream — re-check the patch"
+s = s.replace("\nApp.run()", "\n__import__('summer_bridge_check').start(settings)\nApp.run()")
 open(mainpy, "w", encoding="utf-8", newline="").write(s)
 PYEOF
+    # The bridge firmware is persistent (flashed below, not app-owned), so nothing
+    # reflashes it when another App Lab app takes over the MCU. This probe runs on
+    # every game start: the bridge's own apply_settings RPC answers in milliseconds
+    # when it is there; when it is not, drop a flag the host's summer-bridge-flash
+    # path unit (setup-board.sh) turns into an upload of the prebuilt firmware.
+    cat > "$T/app/python/summer_bridge_check.py" <<'EOF'
+# Summer's — not part of the vendored Arduino bridge. Started from main.py.
+import threading, time
+from arduino.app_utils import Bridge
+
+FLAG = "/app/.reflash-bridge"   # app folder is bind-mounted at /app
+GRACE_S = 15                    # cold boot: the MCU may still be starting alongside us
+REPAIR_S = 120                  # host upload of the prebuilt image + MCU restart
+
+
+def start(settings):
+    args = (settings["sensX"], settings["sensY"], settings["accel"],
+            settings["dead"], settings["invertY"])
+    last = [None]
+
+    def alive():
+        try:
+            Bridge.call("apply_settings", *args, timeout=3)
+            return True
+        except Exception as e:   # TimeoutError: silence; ValueError: foreign sketch
+            last[0] = e
+            return False
+
+    def wait(seconds, patient=True):
+        t0 = time.time()
+        while time.time() - t0 < seconds:
+            if alive():
+                return round(time.time() - t0, 1)
+            if not patient and isinstance(last[0], ValueError):
+                return None   # something answered and lacks our RPC: no point waiting
+            time.sleep(1)
+        return None
+
+    def passed():
+        # The bridge announced its Modulinos (device_found) when *it* booted, which on a
+        # cold boot is before this process existed. Ask for the list again so the web UI
+        # and device settings see them; key mapping itself does not depend on it.
+        try:
+            Bridge.call("rescan", timeout=3)
+        except Exception as e:
+            print(f"bridge check: rescan failed ({e})", flush=True)
+
+    def run():
+        # Silence may just be the MCU still booting next to us; an answer that does not
+        # know apply_settings is a foreign sketch and gets reflashed right away.
+        t0 = time.time()
+        if wait(GRACE_S, patient=False) is not None:
+            print("bridge check: ok", flush=True)
+            passed()
+            return
+        print(f"bridge check: MCU not answering ({last[0]}) — requesting reflash", flush=True)
+        open(FLAG, "w").close()
+        if wait(REPAIR_S) is not None:
+            print(f"bridge check: bridge restored after {time.time() - t0:.0f} s", flush=True)
+            passed()
+        else:
+            print("bridge check: FAILED — controls are down; check "
+                  "'journalctl -u summer-bridge-flash' on the board", flush=True)
+
+    threading.Thread(target=run, name="summer-bridge-check", daemon=True).start()
+EOF
     # A team's saved key map survives redeploys: keep the old app's config.json.
     if [ -f "$APP/python/config.json" ]; then
         cp "$APP/python/config.json" "$T/app/python/config.json"
@@ -132,8 +203,21 @@ set -e
 cd /game/game
 BIN=$(ls -Sp . | grep -v '/$' | grep -v '\.pck$' | head -1)
 chmod +x "$BIN" 2>/dev/null || true
-echo "game_runner: launching $BIN ${GAME_FLAGS:-}"
-exec "./$BIN" ${GAME_FLAGS:-}
+# Boot race: with the persistent bridge this container starts ~3 s after app-cli, which
+# can be before LightDM has the X session up. Godot then exits within a second with
+# "all display drivers failed" and, with restart: "no", the game would stay dead. Retry
+# an early failure; a game that ran for a while and exited (menu Quit, real crash) is
+# not retried. Cap: 60 attempts, so a board without a desktop does not loop forever.
+N=0
+while :; do
+    N=$((N + 1)); T0=$(date +%s)
+    echo "game_runner: launching $BIN ${GAME_FLAGS:-}"
+    "./$BIN" ${GAME_FLAGS:-} && exit 0
+    RC=$?
+    if [ $(( $(date +%s) - T0 )) -ge 15 ] || [ $N -ge 60 ]; then exit $RC; fi
+    echo "game_runner: exited $RC after <15 s — display not ready yet, retrying in 2 s"
+    sleep 2
+done
 EOF
 chmod +x "$T/app/run-game.sh"
 
@@ -169,9 +253,8 @@ services:
     entrypoint: ["/bin/sh", "/game/run-game.sh"]
 EOF
 
-# Carry the old app's build cache (sketch artifacts + python venv) into the new
-# assembly - without it every redeploy recompiles the unchanged bridge sketch,
-# ~4.5 min instead of ~1. -p above keeps sketch mtimes stable for the same reason.
+# Carry the old app's Python environment cache into the new assembly. The persistent
+# bridge has its own build directory at $BRIDGE_BUILD and is never app-owned.
 if [ -d "$APP/.cache" ]; then
     cp -a "$APP/.cache" "$T/app/.cache"
 fi
@@ -184,6 +267,23 @@ arduino-app-cli app stop "user:$SLUG" >/dev/null 2>&1 || true
 for RUNNING in $(arduino-app-cli app list 2>/dev/null | awk '$1 ~ /^user:/ && $(NF-1) == "running" {print $1}'); do
     [ "$RUNNING" = "user:$SLUG" ] || arduino-app-cli app stop "$RUNNING" >/dev/null 2>&1 || true
 done
+
+# Flash persistent controller firmware once per deploy. Wait-for-Linux starts the
+# bridge after the MPU is ready on every later boot without an app-cli signal.
+# App-owned sketches use Wait-for-App and cost ~96 seconds on every cold boot.
+if [ "$NO_BRIDGE" != "1" ]; then
+    echo ">> flashing persistent Modulino bridge (deploy-time only)..."
+    mkdir -p "$BRIDGE_BUILD"
+    arduino-cli compile \
+        --fqbn arduino:zephyr:unoq:wait_linux_boot=yes \
+        --build-path "$BRIDGE_BUILD" \
+        "$BRIDGE/sketch"
+    arduino-cli upload \
+        --fqbn arduino:zephyr:unoq:wait_linux_boot=yes \
+        --input-dir "$BRIDGE_BUILD" \
+        "$BRIDGE/sketch"
+fi
+
 mkdir -p "$APPS"
 rm -rf "$APP"
 mv "$T/app" "$APP"   # same partition as $T, so this is an atomic rename
