@@ -104,7 +104,9 @@ so every game start verifies the bridge and repairs it when needed:
    every 2 s) uploads the prebuilt image from `/home/arduino/.summer/bridge-build` with
    `arduino-cli upload`; no compile is involved.
 4. The check keeps probing and logs `bridge check: bridge restored after N s`. Settings
-   are pushed by the probe itself, so the dead zone is applied on every start.
+   are pushed by the probe itself, so the dead zone is applied on every start. A
+   `rescan` follows every pass: the bridge announces its Modulinos only when it boots,
+   which on a cold boot is before the Python side exists.
 
 Measured on the board on 2026-09-04 with the stock `examples:blink` app as the intruder:
 

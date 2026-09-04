@@ -162,17 +162,28 @@ def start(settings):
             time.sleep(1)
         return None
 
+    def passed():
+        # The bridge announced its Modulinos (device_found) when *it* booted, which on a
+        # cold boot is before this process existed. Ask for the list again so the web UI
+        # and device settings see them; key mapping itself does not depend on it.
+        try:
+            Bridge.call("rescan", timeout=3)
+        except Exception as e:
+            print(f"bridge check: rescan failed ({e})", flush=True)
+
     def run():
         # Silence may just be the MCU still booting next to us; an answer that does not
         # know apply_settings is a foreign sketch and gets reflashed right away.
         t0 = time.time()
         if wait(GRACE_S, patient=False) is not None:
             print("bridge check: ok", flush=True)
+            passed()
             return
         print(f"bridge check: MCU not answering ({last[0]}) — requesting reflash", flush=True)
         open(FLAG, "w").close()
         if wait(REPAIR_S) is not None:
             print(f"bridge check: bridge restored after {time.time() - t0:.0f} s", flush=True)
+            passed()
         else:
             print("bridge check: FAILED — controls are down; check "
                   "'journalctl -u summer-bridge-flash' on the board", flush=True)
