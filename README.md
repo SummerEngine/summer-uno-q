@@ -170,8 +170,8 @@ And under `[display]`:
 ```ini
 [display]
 
-window/size/viewport_width=960
-window/size/viewport_height=540
+window/size/viewport_width=800
+window/size/viewport_height=480
 window/stretch/mode="viewport"
 ```
 
@@ -179,13 +179,13 @@ window/stretch/mode="viewport"
 against a 60 Hz screen microstutters; locked at 60 it feels smoother than the higher
 average ever did.
 
-**The design resolution IS the render resolution — cap it at 960x540.** Games launch
+**The design resolution IS the render resolution — cap it at 800x480.** Games launch
 fullscreen, and with `stretch/mode="viewport"` the game renders at the design size and
 scales to whatever screen is attached, so the frame cost never depends on the monitor.
 Any other configuration renders at screen resolution: this board manages roughly 38 fps
-pushing a 2D canvas at 1080p and 60+ at 960x540 — and while the jam's handheld screen
+pushing a 2D canvas at 1080p and 60+ at 800x480 — and while the jam's handheld screen
 is small, the same game plugged into a TV afterwards must not fall off a cliff.
-Pixel-art games should go lower still (480x270), or keep 960x540 and render the world
+Pixel-art games should go lower still (480x270), or keep 800x480 and render the world
 through a `SubViewportContainer` with `stretch_shrink=2` for fat pixels under a
 crisp HUD.
 
@@ -417,12 +417,12 @@ conflict.
 - **Don't improvise `adb`, `docker`, `apt`, or SSH repairs on the board.** Use the skill's
   scripts. An agent improvising on hardware can burn a team's whole day, and the damage
   shows up looking like a game bug.
-- **Don't ask permission for Steps 3 and 4.** "Shall I switch to 960×540 and add the arm64
+- **Don't ask permission for Steps 3 and 4.** "Shall I switch to 800×480 and add the arm64
   preset?" hands the person a decision they have no basis to make. Apply, then mention.
 - **Don't report settings as results.** `max_fps=60` is a ceiling, not a frame rate;
   `etc2_astc=true` is an import setting, not a texture that has been seen working;
   "Uno Q-ready" is something only the board can say. Until it has run there, say what you
-  configured — "set to 960×540 with a 60 fps cap" — never what it achieves.
+  configured — "set to 800×480 with a 60 fps cap" — never what it achieves.
 - **Don't call the game done from the editor.** Play it on the board.
 
 ---
