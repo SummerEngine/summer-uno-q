@@ -389,10 +389,9 @@ Do not improvise adb or docker commands.
 Use absolute paths in the pointer, not relative ones: the agent's working directory is the
 game project, not the clone.
 
-Then give the skill the **project path**, a game name, and an emoji. It checks that the
-board has had its own first-time setup (Arduino App Lab on the person's laptop: board name,
-password, Wi-Fi), exports the project headlessly for arm64, provisions the board on first
-use, and installs the game as an App Lab app. Summer can stay open on the project while it exports — that's faster, not a
+Then give the skill the **project path**, a game name, and an emoji. It exports the project
+headlessly for arm64, provisions the board on first use, and installs the game as an App
+Lab app. Summer can stay open on the project while it exports — that's faster, not a
 conflict.
 
 - The **first** deploy also provisions the board — desktop autologin, screen-locker
