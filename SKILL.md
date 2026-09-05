@@ -21,50 +21,6 @@ are the product.** The host-side export below is yours to run.
 (where this SKILL.md lives) — resolve it to an absolute path before running, since
 your working directory is the user's project.
 
-## Before anything: has the board had its own first-time setup?
-
-The Uno Q ships with its own out-of-box setup — board name, Wi-Fi, password — and it is
-the person's to do, not yours. It happens in **Arduino App Lab on their laptop**, with the
-board plugged in over USB-C. What this skill needs out of it is the **password**: the
-board setup below runs `sudo` once, and a factory board has no usable password until
-the wizard sets one.
-
-**Check it yourself, then ask only if something is missing.** One command, worth running
-before every first deploy rather than trusting anyone's memory:
-
-```
-adb shell "test -f /home/arduino/.summer-hackathon-setup && echo provisioned"
-```
-
-Keep the quotes exactly as written. Unquoted, a Git Bash / MSYS shell on Windows rewrites
-the path and answers `test: C:/Program: binary operator expected`, which reads like a
-board problem and is not one.
-
-- **Marker present** — this board has been through everything already; skip to Deploy.
-- **No marker** — the board still needs the setup below. If `adb shell hostname` answers
-  `uno-q`, the App Lab wizard has most likely not been run either; send the list.
-
-Wi-Fi is not needed for any of this. Everything the board setup and a game deploy do runs
-offline from the kit, and the game boots straight in without a network. The wizard asks
-for it anyway, so the list says what to do with that step.
-
-**Send this list exactly as written.** The numbering matches the order App Lab's wizard
-asks in. Do not summarise it, reorder it, or add steps of your own:
-
-> Before I can put anything on the board, it needs its own one-time setup — a couple of
-> minutes in Arduino App Lab on your laptop ☀️
->
-> 1. Install and open **Arduino App Lab**, then plug the board in over USB-C.
-> 2. Give the board a name.
-> 3. Wi-Fi — **you can skip this**; the game doesn't need it.
-> 4. Set a password — **remember it**, you'll type it once more later.
->
-> Say when it's done and I'll take it from there.
-
-Then wait. When they say it is done, carry on with the rest of this skill; the board
-setup step is where the password gets used, and a missing one shows up there as a
-`sudo` failure rather than anywhere earlier.
-
 ## Inputs to collect from the user
 
 1. **Path to the project** (the folder containing `project.godot`). **Always export it
